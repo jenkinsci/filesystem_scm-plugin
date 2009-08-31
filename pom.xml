@@ -10,7 +10,7 @@
     <artifactId>filesystem_scm</artifactId>
     <packaging>hpi</packaging>
     <name>File System SCM plugin</name>
-    <version>0.1</version>
+    <version>0.2-SNAPSHOT</version>
     <url>http://wiki.hudson-ci.org/display/HUDSON/File+System+SCM</url>
     <developers>
         <developer>
@@ -31,8 +31,8 @@
     </dependencies>
 
   <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/filesystem_scm-0.1</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/filesystem_scm-0.1</developerConnection>
-    <url>http://fisheye4.atlassian.com/browse/hudson/tags/filesystem_scm-0.1</url>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/trunk/hudson/plugins/filesystem_scm</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/filesystem_scm</developerConnection>
+    <url>http://fisheye4.atlassian.com/browse/hudson/trunk/hudson/plugins/filesystem_scm</url>
   </scm>
 </project>
