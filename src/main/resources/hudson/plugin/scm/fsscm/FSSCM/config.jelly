@@ -1,0 +1,42 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="Path" help="${rootURL}/plugin/FSSCM/help-path.html">
+    <f:textbox name="fs_scm.path" value="${scm.path}" />
+  </f:entry>
+  <f:entry title="Clear Workspace" help="${rootURL}/plugin/FSSCM/help-clearWorkspace.html">
+    <f:checkbox name="fs_scm.clearWorkspace" checked="${scm.clearWorkspace}"/>
+  </f:entry>
+  <f:entry title="Enable Filtering" help="${rootURL}/plugin/FSSCM/help-filter.html">
+    <!-- If I don't have the table, then optionalBlock won't work in here -->
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <f:optionalBlock name="fs_scm.filterEnabled" title="" checked="${scm.filterEnabled}">
+        <f:block>
+          <table width="100%">
+            <tr>
+              <td width="10%">
+                <select name="fs_scm.includeFilter">
+                  <f:option value="true" selected="${scm.includeFilter}">Include</f:option>
+                  <f:option value="false" selected="${! scm.includeFilter}">Exclude</f:option>
+                </select>
+              </td>
+              <td width="90%">
+                <f:repeatable var="filter" items="${scm.filters}" noAddButton="true" minimum="1">
+                  <table cellspace="0" cellpadding="0" border="0">
+                    <f:entry title="Wildcard"  help="${rootURL}/plugin/FSSCM/help-filterDetail.html" >
+                      <f:textbox name="fs_scm.filters" value="${filter}"/>
+                    </f:entry>
+                    <f:entry>
+                      <div align="right">
+                        <input type="button" value="Add more" class="repeatable-add show-if-last" />
+                        <input type="button" value="Delete" class="repeatable-delete show-if-not-only" style="margin-left: 1em;" />
+                      </div>
+                    </f:entry>
+                  </table>
+                </f:repeatable>
+              </td>
+            </tr>
+          </table>
+        </f:block>
+      </f:optionalBlock>
+    </table>
+  </f:entry>
+</j:jelly>

@@ -1,0 +1,33 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <h2>${%Summary}</h2>
+  <table class="pane" style="border:none">
+    <j:forEach var="cs" items="${it.items}" varStatus="loop">
+      <tr class="pane">
+        <td colspan="2" class="changeset">
+          <a name="detail${loop.index}"></a>
+          <div class="changeset-message">
+            <b>
+              ${%Version}  by <a href="${rootURL}/${cs.author.url}/">${cs.author}</a>:
+            </b><br/>
+          </div>
+        </td>
+      </tr>
+      <j:choose>
+        <j:when test="${empty cs.affectedPaths}">
+          <tr>
+            <td colspan="2">${%No changes.}</td>
+          </tr>
+        </j:when>
+        <j:otherwise>
+          <j:forEach var="item" items="${cs.affectedPaths}">
+            <tr>
+              <td><t:editTypeIcon type="${item.editType}" /></td>
+              <td>${item.value}</td>
+            </tr>
+          </j:forEach>
+        </j:otherwise>
+      </j:choose>      
+    </j:forEach>
+  </table>
+</j:jelly>
+
