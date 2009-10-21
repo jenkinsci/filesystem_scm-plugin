@@ -3,6 +3,7 @@ package hudson.plugin.scm.fsscm;
 import java.io.*;
 import java.util.*;
 import org.kohsuke.stapler.StaplerRequest;
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -13,8 +14,8 @@ import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import java.text.SimpleDateFormat;
 
 public class FSSCM extends SCM {
 
@@ -171,8 +172,8 @@ public class FSSCM extends SCM {
 		}
 	}
 	
-    public static final class DescriptorImpl extends SCMDescriptor<FSSCM>
-    {
+    public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
+        @Extension
         public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
             	
         private DescriptorImpl() {
@@ -186,12 +187,12 @@ public class FSSCM extends SCM {
         }
 
         @Override
-        public boolean configure(StaplerRequest req) throws FormException {
+        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             return true;
         }        
         
         @Override
-        public SCM newInstance(StaplerRequest req) throws hudson.model.Descriptor.FormException {
+        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
         	String path = req.getParameter("fs_scm.path");
         	String[] filters = req.getParameterValues("fs_scm.filters");
         	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
