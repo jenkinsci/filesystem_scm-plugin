@@ -1,4 +1,4 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import java.util.Iterator;
 import hudson.model.*;
@@ -7,6 +7,16 @@ import java.io.*;
 import hudson.util.XStream2;
 import org.apache.commons.io.IOUtils;
 
+/** FileSystem base SCM ChangelogSet
+ * <p>Not like other SCMs, there is always just ONE set of changelog when we checkout. 
+ * While multiple users may have modified some files between two builds, but we will only be 
+ * able to detect if there is any files modified (YES or NO).</p>
+ * 
+ * <p>XML serialization is done by XStream2</p>
+ * 
+ * @author Sam NG
+ *
+ */
 public class ChangelogSet extends hudson.scm.ChangeLogSet {
 
 	// I'm FileSystem SCM, basically I will only have 1 changelog

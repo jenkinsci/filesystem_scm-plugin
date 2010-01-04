@@ -1,4 +1,4 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import static org.junit.Assert.*;
 import org.junit.*;

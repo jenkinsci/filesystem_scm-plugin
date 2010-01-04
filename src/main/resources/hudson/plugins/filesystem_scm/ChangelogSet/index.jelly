@@ -19,7 +19,7 @@
           </tr>
         </j:when>
         <j:otherwise>
-          <j:forEach var="item" items="${cs.affectedPaths}">
+          <j:forEach var="item" items="${cs.affectedFiles}">
             <tr>
               <td><t:editTypeIcon type="${item.editType}" /></td>
               <td>${item.value}</td>

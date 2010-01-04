@@ -1,4 +1,4 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import java.io.*;
 import java.util.*;
@@ -14,15 +14,31 @@ import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
-import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import java.text.SimpleDateFormat;
+import org.apache.commons.io.IOUtils;
 
 public class FSSCM extends SCM {
 
+	/** The source folder
+	 * 
+	 */
 	private String path;
+	/** If true, will delete everything in workspace every time before we checkout
+	 * 
+	 */
 	private boolean clearWorkspace;
+	/** If we have include/exclude filter, then this is true
+	 * 
+	 */
 	private boolean filterEnabled;
+	/** Is this filter a include filter or exclude filter
+	 * 
+	 */
 	private boolean includeFilter;
+	/** filters will be passed to org.apache.commons.io.filefilter.WildcardFileFilter
+	 * 
+	 */
 	private String[] filters;
 	
 	// Don't use DataBoundConsturctor, it is still not mature enough, many HTML form elements are not binded
@@ -69,31 +85,65 @@ public class FSSCM extends SCM {
 	@Override
 	public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
 	throws IOException, InterruptedException {
-		
+				
 		long start = System.currentTimeMillis();
 		PrintStream log = launcher.getListener().getLogger();
 		log.println("FSSCM.checkout " + path + " to " + workspace);
 		Boolean b = Boolean.TRUE;
+
+		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getProject().getRootDir());
 		
 		if ( clearWorkspace ) {
 			log.println("FSSCM.clearWorkspace...");
-			workspace.deleteRecursive();
-			b = workspace.act(new RemoteCopyDir(path));
-			
-		// not clearWorkspace
-		} else {
-			RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
-			setupRemoteFolderDiff(callable, build.getProject());
-			List<FolderDiff.Entry> list = workspace.act(callable);
-			
-			// raw log
-			String str = callable.getLog();
-			if ( str.length() > 0 ) log.println(str);
-			
-			ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
-			ChangelogSet changeLogSet = new ChangelogSet(build, list);
-			handler.save(changeLogSet, changelogFile);
+			workspace.deleteRecursive();	
 		}
+		
+//			b = workspace.act(new RemoteCopyDir(path));
+//			
+//			// save the list of existing files
+//			Set<String> existingFiles = workspace.act(new RemoteListDir());
+//			allowDeleteList.setList(existingFiles);
+//			allowDeleteList.save();
+			
+//		// not clearWorkspace
+//		} else {
+			
+		// we will only delete a file if it is listed in the allowDeleteList
+		// ie. we will only delete a file if it is copied by us
+		if ( allowDeleteList.fileExists() ) {
+			allowDeleteList.load();
+		} else {
+			// watch list save file doesn't exist
+			// we will assuem all existing files are under watch 
+			// ie. everything can be deleted 
+			Set<String> existingFiles = workspace.act(new RemoteListDir());
+			allowDeleteList.setList(existingFiles);
+		}
+		
+		RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
+		setupRemoteFolderDiff(callable, build.getProject(), allowDeleteList.getList());
+		List<FolderDiff.Entry> list = workspace.act(callable);
+		
+		// maintain the watch list
+		for(FolderDiff.Entry entry : list) {
+			if ( FolderDiff.Entry.Type.DELETED.equals(entry.getType()) ) {
+				allowDeleteList.remove(entry.getFilename());
+			} else {
+				// added or modified
+				allowDeleteList.add(entry.getFilename());
+			}
+		}
+		allowDeleteList.save();
+		
+		// raw log
+		String str = callable.getLog();
+		if ( str.length() > 0 ) log.println(str);
+		
+		ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
+		ChangelogSet changeLogSet = new ChangelogSet(build, list);
+		handler.save(changeLogSet, changelogFile);
+		
+//		}
 		
 		log.println("FSSCM.check completed in " + formatDurration(System.currentTimeMillis()-start));
 		return b;
@@ -125,8 +175,21 @@ public class FSSCM extends SCM {
 		PrintStream log = launcher.getListener().getLogger();
 		log.println("FSSCM.pollChange: " + path);
 		
+		AllowDeleteList allowDeleteList = new AllowDeleteList(project.getRootDir());
+		// we will only delete a file if it is listed in the allowDeleteList
+		// ie. we will only delete a file if it is copied by us
+		if ( allowDeleteList.fileExists() ) {
+			allowDeleteList.load();
+		} else {
+			// watch list save file doesn't exist
+			// we will assuem all existing files are under watch 
+			// ie. everything can be deleted 
+			Set<String> existingFiles = workspace.act(new RemoteListDir());
+			allowDeleteList.setList(existingFiles);
+		}
+		
 		RemoteFolderDiff.PollChange callable = new RemoteFolderDiff.PollChange();
-		setupRemoteFolderDiff(callable, project);
+		setupRemoteFolderDiff(callable, project, allowDeleteList.getList());
 		
 		boolean changed = workspace.act(callable);
 		String str = callable.getLog();
@@ -137,7 +200,7 @@ public class FSSCM extends SCM {
 		return changed;
 	}
 	
-	private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project) {
+	private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
 		Run lastBuild = project.getLastBuild();
 		if ( null == lastBuild ) {
 			diff.setLastBuildTime(0);
@@ -158,6 +221,8 @@ public class FSSCM extends SCM {
 			if ( includeFilter ) diff.setIncludeFilter(filters);
 			else diff.setExcludeFilter(filters);
 		}		
+		
+		diff.setAllowDeleteList(allowDeleteList);
 	}
 		
 	protected static String formatDurration(long diff) {
@@ -172,11 +237,13 @@ public class FSSCM extends SCM {
 		}
 	}
 	
-    public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
-        @Extension
+	// we use PluginImpl, if we use annonation in here, end-up we will show two plugins in the project page
+	// @Extension
+    public static final class DescriptorImpl extends SCMDescriptor<FSSCM>
+    {
         public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
             	
-        private DescriptorImpl() {
+        public DescriptorImpl() {
         	super(FSSCM.class, null);
             load();
         }
@@ -187,12 +254,12 @@ public class FSSCM extends SCM {
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+        public boolean configure(StaplerRequest req) throws FormException {
             return true;
         }        
         
         @Override
-        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        public SCM newInstance(StaplerRequest req) throws hudson.model.Descriptor.FormException {
         	String path = req.getParameter("fs_scm.path");
         	String[] filters = req.getParameterValues("fs_scm.filters");
         	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));

@@ -1,16 +1,31 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import java.io.*;
 import java.util.*;
 import org.apache.commons.io.*;
 import org.apache.commons.io.filefilter.*;
 
+/** Detect if two folders are the same or not
+ * 
+ * <p>This is the core logic for detecting if we need to checkout or pollchanges</p>
+ * 
+ * <p>Two methods to detect if the two folders are the same
+ * <ul>
+ *   <li>check if there are new/modified files in the source folder</li>
+ *   <li>check if there are deleted files in the source folder</li>
+ * </ul>
+ * </p>
+ * 
+ * @author Sam NG
+ *
+ */
 public class FolderDiff {
 	private String srcPath;
 	private String dstPath;
 	private boolean filterEnabled;
 	private boolean includeFilter;
 	private String[] filters;
+	private Set<String> allowDeleteList;
 	
 	public FolderDiff() {
 		filterEnabled = false;
@@ -36,20 +51,44 @@ public class FolderDiff {
 		this.filters = filters;		
 	}
 	
+	public void setAllowDeleteList(Set<String> allowDeleteList) {
+		this.allowDeleteList = allowDeleteList;
+	}
+	
+	/*
 	public boolean isModifiedSince(long time) {
 		//if ( hasNewOrModifiedFiles(time) ) return true;
 		//else if ( hasDeletedFiles(time) ) return true;
 		//else return false;
 		return true;
-	}
+	}*/
 	
+	/**
+	 * <p>For each file in the source folder
+	 * <ul>
+	 *   <li>if file is not in destination, this is a new file</li>
+	 *   <li>if the destination file exists but is old, this is a modified file</li>
+	 * </ul>
+	 * 
+	 * <p>Note: the time parameter (1st param) is basically not used in the code. 
+	 * On Windows, the lastModifiedDate will not be updated when you copy a file to the source folder, 
+	 * until we have a way to get the "real" lastModifiedDate on Windows, we won't use this "time" field</p>
+	 * 
+	 * @param time should be the last build time, to improve performance, we will list all files modified after "time" and check with destination
+	 * @param breakOnceFound to improve performance, we will return once we found the 1st new or modified file
+	 * @param testRun if true, will not sync file from source to destination, otherwise, will sync files if new or modified files found
+	 * 
+	 * @return the list of new or modified files
+	 */
 	public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound, boolean testRun) {
 		File src = new File(srcPath);
 		File dst = new File(dstPath);
 		
 		IOFileFilter dirFilter = HiddenFileFilter.VISIBLE;
 		AndFileFilter fileFilter = new AndFileFilter();
-		//fileFilter.addFileFilter(new AgeFileFilter(time, false /* accept newer */));
+		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
+		// only the creation date is updated, so we can't use the following AgeFileFiilter
+		// fileFilter.addFileFilter(new AgeFileFilter(time, false /* accept newer */));
 		fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
 		if ( filterEnabled && null != filters && filters.length > 0 ) {
 			WildcardFileFilter wcf = new WildcardFileFilter(filters, IOCase.INSENSITIVE);
@@ -80,7 +119,8 @@ public class FolderDiff {
 				if ( newOrModified ) {
 					if ( breakOnceFound ) return list;
 					if ( !testRun ) {
-						FileUtils.copyFile(file, tmp);
+						// FileUtils.copyFile(file, tmp);
+						copyFile(file, tmp);
 					}					
 				}
 			} catch ( IOException e ) {
@@ -90,13 +130,31 @@ public class FolderDiff {
 		return list;
 	}
 	
+	/**
+	 * <p>For each file in the destination folder
+	 * <ul>
+	 *   <li>if file is not in source, and it is in the allowDeleteList, this file will be deleted in the source</li>
+	 * </ul>
+	 * 
+	 * <p>Note: the time parameter (1st param) is basically not used in the code. 
+	 * On Windows, the lastModifiedDate will not be updated when you copy a file to the source folder, 
+	 * until we have a way to get the "real" lastModifiedDate on Windows, we won't use this "time" field</p>
+	 * 
+	 * @param time should be the last build time, to improve performance, we will list all files modified after "time" and check with source
+	 * @param breakOnceFound to improve performance, we will return once we found the 1st new or modified file
+	 * @param testRun if true, will not sync file from source to destination, otherwise, will sync files if deleted files found
+	 * 
+	 * @return the list of deleted files
+	 */	
 	public List<Entry> getDeletedFiles(long time, boolean breakOnceFound, boolean testRun) {
 		File src = new File(srcPath);
 		File dst = new File(dstPath);
 		
 		IOFileFilter dirFilter = HiddenFileFilter.VISIBLE;
 		AndFileFilter fileFilter = new AndFileFilter();
-		fileFilter.addFileFilter(new AgeFileFilter(time, true /* accept older */));
+		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
+		// only the creation date is updated, so we can't use the following AgeFileFiilter
+		//fileFilter.addFileFilter(new AgeFileFilter(time, true /* accept older */));
 		fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
 		if ( filterEnabled && null != filters && filters.length > 0 ) {
 			WildcardFileFilter wcf = new WildcardFileFilter(filters, IOCase.INSENSITIVE);
@@ -113,7 +171,7 @@ public class FolderDiff {
 			try {
 				String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
 				File tmp = new File(src, relativeName);
-				if ( !tmp.exists() ) {
+				if ( !tmp.exists() && (null == allowDeleteList || allowDeleteList.contains(relativeName)) ) {
 					log("Deleted file: " + relativeName);
 					list.add(new Entry(relativeName, Entry.Type.DELETED));
 					if ( breakOnceFound ) return list;
@@ -196,6 +254,16 @@ public class FolderDiff {
 		if ( 0 != x ) throw new IOException(fileName + " is not inside " + folderName);
 		String relativeName = fileName.substring(folderName.length() );
 		return relativeName;
+	}
+	
+	/** Copy file from source to destination (default will not copy file permission)
+	 * 
+	 * @param src Source File
+	 * @param dst Destination File
+	 * @throws IOException
+	 */
+	protected void copyFile(File src, File dst) throws IOException {
+		FileUtils.copyFile(src, dst);
 	}
 	
 	public static class Entry implements Serializable {

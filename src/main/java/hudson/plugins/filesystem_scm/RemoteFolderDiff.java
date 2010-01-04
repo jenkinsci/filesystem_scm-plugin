@@ -1,5 +1,6 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
+import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
 
@@ -36,6 +37,19 @@ public class RemoteFolderDiff extends FolderDiff {
 	@Override
 	protected void log(String msg) {
 		buf.append(msg).append("\n");
+	}
+	
+	@Override
+	protected void copyFile(File src, File dst) throws IOException {
+		FilePath srcpath = new FilePath(src);
+		FilePath dstpath = new FilePath(dst);
+		try {
+			srcpath.copyToWithPermission(dstpath);
+		} catch (InterruptedException e) {
+			IOException ioe = new IOException();
+			ioe.initCause(e);
+			throw ioe;
+		}
 	}
 	
 	public String getLog() {

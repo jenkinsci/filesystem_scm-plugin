@@ -1,23 +1,33 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.jvnet.hudson.plugins</groupId>
-        <artifactId>plugin</artifactId>
-        <version>1.322</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    
-    <artifactId>filesystem_scm</artifactId>
-    <packaging>hpi</packaging>
-    <name>File System SCM plugin</name>
-    <version>0.2-SNAPSHOT</version>
-    <url>http://wiki.hudson-ci.org/display/HUDSON/File+System+SCM</url>
-    <developers>
-        <developer>
-          <id>rtyler</id>
-          <name>R. Tyler Ballance</name>
-          <email>tyler@slide.com</email>
-          <timezone>-8</timezone>
-        </developer>
-    </developers>
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>org.jvnet.hudson.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>1.311</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+      
+  <groupId>hudson.plugins.filesystem_scm</groupId>
+  <artifactId>filesystem_scm</artifactId>
+  <packaging>hpi</packaging>
+  <name>File System SCM</name>
+  <version>1.5-SNAPSHOT</version>
+  
+  <description>Using File System as SCM, done by checking file system last modified date.</description>
+  <url>http://wiki.hudson-ci.org/display/HUDSON/File+System+SCM</url>
+  <organization>
+  	<name>Fortify Software Inc</name>
+  	<url>http://www.fortify.com</url>
+  </organization>
+  
+  <developers>
+    <developer>
+      <id>samngms</id>
+      <name>Sam NG</name>
+      <email>samngms@yahoo.com</email>
+      <timezone>+8</timezone>
+    </developer>
+  </developers>
+      
 </project>

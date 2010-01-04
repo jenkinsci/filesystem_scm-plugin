@@ -1,4 +1,4 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import hudson.scm.ChangeLogSet;
 import hudson.scm.EditType;
@@ -9,6 +9,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+/** Represents a Changelog record (ChangeLogSet.Entry) in ChangelogSet
+ * 
+ * <p>Author is always "Unknown"</p>
+ * <p>Date is always the checkout datetime</p>
+ * 
+ *@author Sam NG
+ *
+ */
 public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 	
 	private ChangelogSet parent;
@@ -35,7 +43,16 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 	}
 	
 	@Override
-	public Collection getAffectedPaths() {
+	public Collection<String> getAffectedPaths() {
+		ArrayList<String> list = new ArrayList<String>();
+		for( Path path : paths ) {
+			list.add(path.getValue());
+		}
+		return Collections.unmodifiableList(list);
+	}
+	
+	@Override
+	public Collection<Path> getAffectedFiles() {
 		return Collections.unmodifiableList(paths);
 	}
 	
@@ -123,10 +140,26 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 		return true;
 	}
 	
-	public static class Path {
+	/** A changed file in Changelog
+	 * 
+	 * @author Sam NG
+	 *
+	 */
+	public static class Path implements hudson.scm.ChangeLogSet.AffectedFile {
 		
+		/** The filepath of the modified file
+		 * 
+		 */
 		private String value;
+		
+		/** Either "ADD", "DELETE" or "EDIT"
+		 * 
+		 */
 		private String action;
+		
+		/** The parent changelog object this child belongs to
+		 * 
+		 */
 		private Changelog changelog;
 		
 		public Path() {
@@ -143,6 +176,13 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 			if ( FolderDiff.Entry.Type.NEW == entry.getType() ) setAction("ADD");
 			else if ( FolderDiff.Entry.Type.DELETED == entry.getType() ) setAction("DELETE");
 			else setAction("EDIT");
+		}
+		
+		/**
+		 * Inherited from AffectedFile
+		 */
+		public String getPath() {
+			return getValue();
 		}
 		
 		public String getValue() {

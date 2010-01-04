@@ -1,9 +1,10 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import static org.junit.Assert.*;
 import org.junit.*;
 import java.io.*;
 import java.util.*;
+
 import org.apache.commons.io.*;
 
 public class FolderDiffTest {
@@ -148,6 +149,8 @@ public class FolderDiffTest {
 				// the file is newly created in dst, we shouldn't delete this file
 				// therefore, we don't need to add to expected
 				File newFile = createNewFile(file, false);
+				String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
+				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
 			}
 		});
 		FolderDiff diff = getFolderDiff();
@@ -170,6 +173,29 @@ public class FolderDiffTest {
 		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
 		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
 	}
+	
+	@Test
+	public void testCopiedFilesInDstWithAllowDeleteList() throws IOException {
+		Collection<File> list = FileUtils.listFiles(dst, null, true);
+		Set<String> allowDeleteList = new HashSet<String>();
+		for(File file : list) {
+			String relativePath = FolderDiff.getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
+			allowDeleteList.add(relativePath);
+		}
+		
+		Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
+			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
+				// the file is copied in dst, the last modified time should be same as the original one
+				// we should delete this file
+				File newFile = createNewFile(file, true);
+			}
+		});
+		FolderDiff diff = getFolderDiff();
+		diff.setAllowDeleteList(allowDeleteList);
+		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
+		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
+	}
+		
 	
 	private File createNewFile(File srcFile, boolean copyFile) throws IOException {
 		String ext = FilenameUtils.getExtension(srcFile.getAbsolutePath());

@@ -1,4 +1,4 @@
-package hudson.plugin.scm.fsscm;
+package hudson.plugins.filesystem_scm;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,5 +22,4 @@ public class RemoteCopyDir implements FileCallable<Boolean> {
 		FileUtils.copyDirectory(new File(sourceDir), workspace);
 		return Boolean.TRUE;
 	}
-
 }
