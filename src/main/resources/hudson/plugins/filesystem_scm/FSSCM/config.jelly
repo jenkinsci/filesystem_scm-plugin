@@ -1,11 +1,11 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="Path" help="${rootURL}/plugin/filesystem_scm/help-path.html">
+  <f:entry title="Path" help="/plugin/filesystem_scm/help-path.html">
     <f:textbox name="fs_scm.path" value="${scm.path}" />
   </f:entry>
-  <f:entry title="Clear Workspace" help="${rootURL}/plugin/filesystem_scm/help-clearWorkspace.html">
+  <f:entry title="Clear Workspace" help="/plugin/filesystem_scm/help-clearWorkspace.html">
     <f:checkbox name="fs_scm.clearWorkspace" checked="${scm.clearWorkspace}"/>
   </f:entry>
-  <f:entry title="Enable Filtering" help="${rootURL}/plugin/filesystem_scm/help-filter.html">
+  <f:entry title="Enable Filtering" help="/plugin/filesystem_scm/help-filter.html">
     <!-- If I don't have the table, then optionalBlock won't work in here -->
     <table width="100%" cellspacing="0" cellpadding="0">
       <f:optionalBlock name="fs_scm.filterEnabled" title="" checked="${scm.filterEnabled}">
@@ -21,7 +21,7 @@
               <td width="90%">
                 <f:repeatable var="filter" items="${scm.filters}" noAddButton="true" minimum="1">
                   <table cellspace="0" cellpadding="0" border="0">
-                    <f:entry title="Wildcard"  help="${rootURL}/plugin/filesystem_scm/help-filterDetail.html" >
+                    <f:entry title="Wildcard"  help="/plugin/filesystem_scm/help-filterDetail.html" >
                       <f:textbox name="fs_scm.filters" value="${filter}"/>
                     </f:entry>
                     <f:entry>

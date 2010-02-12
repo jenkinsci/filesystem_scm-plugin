@@ -3,6 +3,7 @@ package hudson.plugins.filesystem_scm;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
+import hudson.tools.JDKInstaller.Platform;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -43,7 +44,21 @@ public class RemoteFolderDiff extends FolderDiff {
 	protected void copyFile(File src, File dst) throws IOException {
 		FilePath srcpath = new FilePath(src);
 		FilePath dstpath = new FilePath(dst);
+		boolean isUnix = false;
 		try {
+			if (Platform.WINDOWS != Platform.current()) isUnix = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			// if not write-able, then we can't copy, have to set it to write-able
+			if ( isUnix && dstpath.exists() ) {
+				int mode = dstpath.mode();
+				// owner write-able bit = 010 000 000b = 0x80 
+				if ( (mode & 0x80) == 0 ) {
+					dstpath.chmod(mode | 0x80);
+				}
+			}
 			srcpath.copyToWithPermission(dstpath);
 		} catch (InterruptedException e) {
 			IOException ioe = new IOException();
@@ -57,6 +72,7 @@ public class RemoteFolderDiff extends FolderDiff {
 	}
 	
 	public static class PollChange extends RemoteFolderDiff implements FileCallable<Boolean> {
+		
 		private static final long serialVersionUID = 1L; 
 		
 		public Boolean invoke(File workspace, VirtualChannel channel) throws IOException {

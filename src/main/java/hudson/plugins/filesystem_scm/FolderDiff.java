@@ -19,7 +19,10 @@ import org.apache.commons.io.filefilter.*;
  * @author Sam NG
  *
  */
-public class FolderDiff {
+public class FolderDiff implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+	
 	private String srcPath;
 	private String dstPath;
 	private boolean filterEnabled;

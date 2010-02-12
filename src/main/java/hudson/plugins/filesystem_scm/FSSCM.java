@@ -97,17 +97,7 @@ public class FSSCM extends SCM {
 			log.println("FSSCM.clearWorkspace...");
 			workspace.deleteRecursive();	
 		}
-		
-//			b = workspace.act(new RemoteCopyDir(path));
-//			
-//			// save the list of existing files
-//			Set<String> existingFiles = workspace.act(new RemoteListDir());
-//			allowDeleteList.setList(existingFiles);
-//			allowDeleteList.save();
-			
-//		// not clearWorkspace
-//		} else {
-			
+					
 		// we will only delete a file if it is listed in the allowDeleteList
 		// ie. we will only delete a file if it is copied by us
 		if ( allowDeleteList.fileExists() ) {
@@ -142,8 +132,6 @@ public class FSSCM extends SCM {
 		ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
 		ChangelogSet changeLogSet = new ChangelogSet(build, list);
 		handler.save(changeLogSet, changelogFile);
-		
-//		}
 		
 		log.println("FSSCM.check completed in " + formatDurration(System.currentTimeMillis()-start));
 		return b;
