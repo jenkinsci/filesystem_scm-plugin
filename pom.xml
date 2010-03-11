@@ -12,7 +12,7 @@
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>File System SCM</name>
-  <version>1.7</version>
+  <version>1.8-SNAPSHOT</version>
   
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>http://wiki.hudson-ci.org/display/HUDSON/File+System+SCM</url>
@@ -29,10 +29,4 @@
       <timezone>+8</timezone>
     </developer>
   </developers>
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/filesystem_scm-1.7</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/filesystem_scm-1.7</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/tags/filesystem_scm-1.7</url>
-  </scm>
 </project>
