@@ -14,9 +14,8 @@ import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import java.text.SimpleDateFormat;
-import org.apache.commons.io.IOUtils;
 
 public class FSSCM extends SCM {
 
@@ -142,11 +141,6 @@ public class FSSCM extends SCM {
 		return new ChangelogSet.XMLSerializer();
 	}
 
-	@Override
-	public SCMDescriptor<FSSCM> getDescriptor() {
-		return DescriptorImpl.DESCRIPTOR;
-	}
-
 	/**
 	 * There are two things we need to check
 	 * <ul>
@@ -224,15 +218,11 @@ public class FSSCM extends SCM {
 			return org.apache.commons.lang.time.DurationFormatUtils.formatDurationWords(diff, true, true);
 		}
 	}
-	
-	// we use PluginImpl, if we use annonation in here, end-up we will show two plugins in the project page
-	// @Extension
-    public static final class DescriptorImpl extends SCMDescriptor<FSSCM>
-    {
-        public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
-            	
+
+    @Extension
+    public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
         public DescriptorImpl() {
-        	super(FSSCM.class, null);
+            super(FSSCM.class, null);
             load();
         }
         
@@ -242,12 +232,12 @@ public class FSSCM extends SCM {
         }
 
         @Override
-        public boolean configure(StaplerRequest req) throws FormException {
+        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             return true;
         }        
         
         @Override
-        public SCM newInstance(StaplerRequest req) throws hudson.model.Descriptor.FormException {
+        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
         	String path = req.getParameter("fs_scm.path");
         	String[] filters = req.getParameterValues("fs_scm.filters");
         	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
