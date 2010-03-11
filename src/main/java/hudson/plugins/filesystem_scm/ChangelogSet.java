@@ -1,10 +1,9 @@
 package hudson.plugins.filesystem_scm;
 
-import java.util.Iterator;
 import hudson.model.*;
+import hudson.util.XStream2;
 import java.util.*;
 import java.io.*;
-import hudson.util.XStream2;
 import org.apache.commons.io.IOUtils;
 
 /** FileSystem base SCM ChangelogSet
@@ -70,9 +69,17 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet {
 	}	
 
 	public static class XMLSerializer extends hudson.scm.ChangeLogParser {
-		private XStream2 xstream;
+		private transient XStream2 xstream;
+		private Object readResolve() {  // xstream field used to be serialized in build.xml
+			initXStream();
+			return this;
+		}
 		
 		public XMLSerializer() {
+			initXStream();
+		}
+
+		private void initXStream() {
 			xstream = new XStream2();
 			xstream.alias("log", ChangelogSet.class);
 			//xstream.addImplicitCollection(ChangelogSet.class, "changeLogSet");
