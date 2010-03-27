@@ -105,8 +105,13 @@ public class FSSCM extends SCM {
 			// watch list save file doesn't exist
 			// we will assuem all existing files are under watch 
 			// ie. everything can be deleted 
-			Set<String> existingFiles = workspace.act(new RemoteListDir());
-			allowDeleteList.setList(existingFiles);
+			if ( workspace.exists() ) {
+				// if we enable clearWorkspace on the 1st jobrun, seems the workspace will be deleted
+				// running a RemoteListDir() on a not existing folder will throw an exception 
+				// anyway, if the folder doesn't exist, we dont' need to list the files
+				Set<String> existingFiles = workspace.act(new RemoteListDir());
+				allowDeleteList.setList(existingFiles);
+			}
 		}
 		
 		RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
