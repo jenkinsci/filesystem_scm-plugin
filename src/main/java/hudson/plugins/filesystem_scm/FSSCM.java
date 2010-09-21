@@ -47,6 +47,10 @@ public class FSSCM extends SCM {
     	this.clearWorkspace = clearWorkspace;
     	this.filterEnabled = filterEnabled;
     	this.includeFilter = includeFilter;
+    	
+		// in hudson 1.337, in filters = null, XStream will throw NullPointerException
+		// this.filters = null;
+		this.filters = new String[0];
    		if ( null != filters ) {
    			Vector<String> v = new Vector<String>();
    			for(int i=0; i<filters.length; i++) {
@@ -55,9 +59,9 @@ public class FSSCM extends SCM {
    					v.add(filters[i]);
    				}
    			}
-   			this.filters = (String[]) v.toArray(new String[1]); 
-   		} else {
-   			this.filters = null;
+   			if ( v.size() > 0 ) {
+   				this.filters = (String[]) v.toArray(new String[1]);
+   			}
    		}
     }
     
