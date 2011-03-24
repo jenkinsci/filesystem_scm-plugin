@@ -86,10 +86,22 @@ public class FolderDiffTest {
 	}
 	
 	@Test
+	public void testNoChanges() {
+	    FolderDiff diff = getFolderDiff();
+	    List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false, true);
+	    assertTrue(result.isEmpty());
+	    ChangelogSet changelogSet = new ChangelogSet(null, result);
+	    assertTrue(changelogSet.isEmptySet());
+	}
+	
+	@Test
 	public void testModifiedFiles() throws IOException {
 		Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
 			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				file.setLastModified(modifiedTime);
+				boolean modified = file.setLastModified(modifiedTime);
+				if (!modified) {
+				    throw new IOException("setlastModified failed");
+				}
 				String relativeName = FolderDiff.getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
 				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.MODIFIED));
 			}

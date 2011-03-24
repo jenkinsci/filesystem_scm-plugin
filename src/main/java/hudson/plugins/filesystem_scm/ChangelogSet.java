@@ -6,8 +6,9 @@ import java.util.*;
 import java.io.*;
 import org.apache.commons.io.IOUtils;
 
-/** FileSystem base SCM ChangelogSet
- * <p>Not like other SCMs, there is always just ONE set of changelog when we checkout. 
+/** 
+ * FileSystem base SCM ChangelogSet
+ * <p>Unlike other SCMs, there is at most ONE set of changelog when we checkout. 
  * While multiple users may have modified some files between two builds, but we will only be 
  * able to detect if there is any files modified (YES or NO).</p>
  * 
@@ -25,7 +26,9 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet {
 	public ChangelogSet(AbstractBuild build, List<FolderDiff.Entry> changes) {
 		super(build);
 		logs = new ArrayList<Changelog>();
-		logs.add(new Changelog(this, changes));
+		if (!changes.isEmpty()) {
+		    logs.add(new Changelog(this, changes));
+		}
 	}
 	
 	@Override
