@@ -92,11 +92,12 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 	}
 			
 	@Override
-	public ChangeLogSet getParent() {
+	public ChangeLogSet<Changelog> getParent() {
 		return parent;
 	}
 	
-	@Override
+	@SuppressWarnings("rawtypes")
+    @Override
 	protected void setParent(ChangeLogSet parent) {
 		this.parent = (ChangelogSet)parent;
 	}

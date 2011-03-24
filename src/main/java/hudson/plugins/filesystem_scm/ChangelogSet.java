@@ -94,7 +94,8 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet {
 			//xstream.omitField(ChangelogSet.Path.class, "changeLog");
 		}
 		
-		public ChangelogSet parse(AbstractBuild build, java.io.File file) throws FileNotFoundException {
+		@SuppressWarnings("rawtypes")
+        public ChangelogSet parse(AbstractBuild build, java.io.File file) throws FileNotFoundException {
 			FileInputStream in = null;
 			ChangelogSet out = null;
 			try {

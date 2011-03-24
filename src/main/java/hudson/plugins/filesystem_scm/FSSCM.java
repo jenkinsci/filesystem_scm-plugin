@@ -12,11 +12,16 @@ import hudson.model.BuildListener;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.PollingResult;
+import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 
+/**
+ * {@link SCM} implementation which watches a file system folder.
+ */
 public class FSSCM extends SCM {
 
 	/** The source folder
@@ -85,8 +90,8 @@ public class FSSCM extends SCM {
 		return clearWorkspace;
 	}
 	
-	@Override
-	public boolean checkout(AbstractBuild build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
+    @Override
+	public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
 	throws IOException, InterruptedException {
 				
 		long start = System.currentTimeMillis();
@@ -107,8 +112,8 @@ public class FSSCM extends SCM {
 			allowDeleteList.load();
 		} else {
 			// watch list save file doesn't exist
-			// we will assuem all existing files are under watch 
-			// ie. everything can be deleted 
+			// we will assume all existing files are under watch 
+			// i.e. everything can be deleted 
 			if ( workspace.exists() ) {
 				// if we enable clearWorkspace on the 1st jobrun, seems the workspace will be deleted
 				// running a RemoteListDir() on a not existing folder will throw an exception 
@@ -141,7 +146,7 @@ public class FSSCM extends SCM {
 		ChangelogSet changeLogSet = new ChangelogSet(build, list);
 		handler.save(changeLogSet, changelogFile);
 		
-		log.println("FSSCM.check completed in " + formatDurration(System.currentTimeMillis()-start));
+		log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis()-start));
 		return b;
 	}
 	
@@ -157,9 +162,8 @@ public class FSSCM extends SCM {
 	 *   <li>file deleted since last build time, we have to compare source and destination folder</li>
 	 * </ul>
 	 */
-	@Override
-	public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener) 
-	throws IOException, InterruptedException {
+	private boolean poll(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener) 
+	    throws IOException, InterruptedException {
 		
 		long start = System.currentTimeMillis();
 		
@@ -187,11 +191,12 @@ public class FSSCM extends SCM {
 		if ( str.length() > 0 ) log.println(str);
 		log.println("FSSCM.pollChange return " + changed);
 
-		log.println("FSSCM.poolChange completed in " + formatDurration(System.currentTimeMillis()-start));		
+		log.println("FSSCM.poolChange completed in " + formatDuration(System.currentTimeMillis()-start));		
 		return changed;
 	}
 	
-	private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
+	@SuppressWarnings("rawtypes")
+    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
 		Run lastBuild = project.getLastBuild();
 		if ( null == lastBuild ) {
 			diff.setLastBuildTime(0);
@@ -216,7 +221,7 @@ public class FSSCM extends SCM {
 		diff.setAllowDeleteList(allowDeleteList);
 	}
 		
-	protected static String formatDurration(long diff) {
+	private static String formatDuration(long diff) {
 		if ( diff < 60*1000L ) {
 			// less than 1 minute
 			if ( diff <= 1 ) return diff + " millisecond";
@@ -246,7 +251,7 @@ public class FSSCM extends SCM {
         }        
         
         @Override
-        public SCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+        public FSSCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
         	String path = req.getParameter("fs_scm.path");
         	String[] filters = req.getParameterValues("fs_scm.filters");
         	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
@@ -255,5 +260,28 @@ public class FSSCM extends SCM {
             return new FSSCM(path, clearWorkspace, filterEnabled, includeFilter, filters);
         }
         
-    }		
+    }
+
+    @Override
+    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> build,
+            Launcher launcher, TaskListener listener) throws IOException,
+            InterruptedException {
+        // we cannot really calculate a sensible revision state for a filesystem folder
+        // therefore we return NONE and simply ignore the baseline in compareRemoteRevisionWith
+        return SCMRevisionState.NONE;
+    }
+
+    @Override
+    protected PollingResult compareRemoteRevisionWith(
+            AbstractProject<?, ?> project, Launcher launcher,
+            FilePath workspace, TaskListener listener, SCMRevisionState baseline)
+            throws IOException, InterruptedException {
+        
+        if(poll(project, launcher, workspace, listener)) {
+            return PollingResult.SIGNIFICANT;
+        } else {
+            return PollingResult.NO_CHANGES;
+        }
+    }
+
 }
