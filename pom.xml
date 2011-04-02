@@ -11,7 +11,7 @@
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>File System SCM</name>
-  <version>1.10-SNAPSHOT</version>
+  <version>1.10</version>
   
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/File+System+SCM</url>
@@ -51,4 +51,10 @@
         </pluginRepository>
     </pluginRepositories>
   
+
+  <scm>
+    <connection>scm:svn:https://svn.jenkins-ci.org/tags/filesystem_scm-1.10</connection>
+    <developerConnection>scm:svn:https://svn.jenkins-ci.org/tags/filesystem_scm-1.10</developerConnection>
+    <url>https://svn.jenkins-ci.org/tags/filesystem_scm-1.10</url>
+  </scm>
 </project>
