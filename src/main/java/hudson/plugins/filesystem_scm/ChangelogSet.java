@@ -17,13 +17,13 @@ import org.apache.commons.io.IOUtils;
  * @author Sam NG
  *
  */
-public class ChangelogSet extends hudson.scm.ChangeLogSet {
+public class ChangelogSet extends hudson.scm.ChangeLogSet<Changelog> {
 
 	// I'm FileSystem SCM, basically I will only have 1 changelog
 	// not like other SCM, e.g. SVN, there may be 2 or 3 committed changes between builds
 	private List<Changelog> logs;
 	
-	public ChangelogSet(AbstractBuild build, List<FolderDiff.Entry> changes) {
+	public ChangelogSet(AbstractBuild<?, ?> build, List<FolderDiff.Entry> changes) {
 		super(build);
 		logs = new ArrayList<Changelog>();
 		if (!changes.isEmpty()) {

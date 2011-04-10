@@ -69,14 +69,14 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 			else if ( "DELETE".equalsIgnoreCase(path.action) ) ++del;
 			else ++edit;
 		}
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buildMessage(buf, add, "new file", "new files");
 		buildMessage(buf, edit, "file modified", "files modified");
 		buildMessage(buf, del, "file deleted", "files deleted");
 		return buf.toString();
 	}
 	
-	private void buildMessage(StringBuffer buf, int count, String singular, String plural) {
+	private void buildMessage(StringBuilder buf, int count, String singular, String plural) {
 		if ( count > 0 ) {
 			if ( buf.length() > 0 ) buf.append(", ");
 			buf.append(count).append(' ');
