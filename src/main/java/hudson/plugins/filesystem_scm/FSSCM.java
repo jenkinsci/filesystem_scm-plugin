@@ -2,6 +2,8 @@ package hudson.plugins.filesystem_scm;
 
 import java.io.*;
 import java.util.*;
+
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import hudson.Extension;
 import hudson.FilePath;
@@ -16,6 +18,7 @@ import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 
@@ -32,6 +35,10 @@ public class FSSCM extends SCM {
 	 * 
 	 */
 	private boolean clearWorkspace;
+	/** If true, will copy hidden files and folders. Default is false.
+	 * 
+	 */
+	private boolean copyHidden;
 	/** If we have include/exclude filter, then this is true
 	 * 
 	 */
@@ -47,9 +54,10 @@ public class FSSCM extends SCM {
 	
 	// Don't use DataBoundConsturctor, it is still not mature enough, many HTML form elements are not binded
 	// @DataBoundConstructor
-    public FSSCM(String path, boolean clearWorkspace, boolean filterEnabled, boolean includeFilter, String[] filters) {
+    public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter, String[] filters) {
     	this.path = path;
     	this.clearWorkspace = clearWorkspace;
+    	this.copyHidden = copyHidden;
     	this.filterEnabled = filterEnabled;
     	this.includeFilter = includeFilter;
     	
@@ -88,6 +96,10 @@ public class FSSCM extends SCM {
 	
 	public boolean isClearWorkspace() {
 		return clearWorkspace;
+	}
+	
+	public boolean isCopyHidden() {
+		return copyHidden;
 	}
 	
     @Override
@@ -213,6 +225,8 @@ public class FSSCM extends SCM {
 		
 		diff.setSrcPath(path);
 		
+		diff.setIgnoreHidden(!copyHidden);
+		
 		if ( filterEnabled ) {
 			if ( includeFilter ) diff.setIncludeFilter(filters);
 			else diff.setExcludeFilter(filters);
@@ -244,7 +258,21 @@ public class FSSCM extends SCM {
         public String getDisplayName() {
             return "File System";
         }
-
+        
+        public FormValidation doFilterCheck(@QueryParameter final String value) {
+        	if ( null == value || value.trim().length() == 0 ) return FormValidation.ok();
+        	if ( value.startsWith("/") || value.startsWith("\\") || value.matches("[a-zA-Z]:.*") ) {
+        		return FormValidation.error("Pattern can't be an absolute path");
+        	} else {
+        		try {
+        			SimpleAntWildcardFilter filter = new SimpleAntWildcardFilter(value);
+        		} catch ( Exception e ) {
+        			return FormValidation.error(e, "Invalid wildcard pattern");
+        		}
+        	}
+        	return FormValidation.ok();
+        }
+        
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             return true;
@@ -257,7 +285,8 @@ public class FSSCM extends SCM {
         	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
         	Boolean includeFilter = Boolean.valueOf(req.getParameter("fs_scm.includeFilter"));
         	Boolean clearWorkspace = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.clearWorkspace")));
-            return new FSSCM(path, clearWorkspace, filterEnabled, includeFilter, filters);
+        	Boolean copyHidden = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.copyHidden")));
+            return new FSSCM(path, clearWorkspace, copyHidden, filterEnabled, includeFilter, filters);
         }
         
     }

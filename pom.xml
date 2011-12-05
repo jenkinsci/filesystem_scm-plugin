@@ -11,14 +11,10 @@
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>File System SCM</name>
-  <version>1.11-SNAPSHOT</version>
+  <version>1.20-SNAPSHOT</version>
   
   <description>Using File System as SCM, done by checking file system last modified date.</description>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/File+System+SCM</url>
-  <organization>
-  	<name>Fortify Software Inc</name>
-  	<url>http://www.fortify.com</url>
-  </organization>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/File+System+SCM</url>  
   
   <developers>
     <developer>
@@ -50,4 +46,6 @@
             <url>http://maven.glassfish.org/content/groups/public/</url>
         </pluginRepository>
     </pluginRepositories>
+    <dependencies>
+    </dependencies>
 </project>

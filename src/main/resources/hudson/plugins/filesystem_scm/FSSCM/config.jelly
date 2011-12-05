@@ -5,6 +5,9 @@
   <f:entry title="Clear Workspace" help="/plugin/filesystem_scm/help-clearWorkspace.html">
     <f:checkbox name="fs_scm.clearWorkspace" checked="${scm.clearWorkspace}"/>
   </f:entry>
+  <f:entry title="Copy Hidden Files/Folders" help="/plugin/filesystem_scm/help-copyHidden.html">
+    <f:checkbox name="fs_scm.copyHidden" checked="${scm.copyHidden}"/>
+  </f:entry>
   <f:entry title="Enable Filtering" help="/plugin/filesystem_scm/help-filter.html">
     <!-- If I don't have the table, then optionalBlock won't work in here -->
     <table width="100%" cellspacing="0" cellpadding="0">
@@ -22,7 +25,8 @@
                 <f:repeatable var="filter" items="${scm.filters}" noAddButton="true" minimum="1">
                   <table cellspace="0" cellpadding="0" border="0">
                     <f:entry title="Wildcard"  help="/plugin/filesystem_scm/help-filterDetail.html" >
-                      <f:textbox name="fs_scm.filters" value="${filter}"/>
+                      <f:textbox name="fs_scm.filters" value="${filter}"
+                        checkUrl="'${rootURL}/scm/FSSCM/filterCheck?value='+encode(this.value)"/>
                     </f:entry>
                     <f:entry>
                       <div align="right">

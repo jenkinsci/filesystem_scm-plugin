@@ -1,11 +1,15 @@
 <div>
   <p>
-    To include just *.java, set filter type to "Include" and type add "*.java" (without quote) in the wildcard
+    ANT style wildcard.
   </p>
   <p>
+  	To include just *.java, set filter type to "Include" and type add "*.java" (without quote) in the wildcard. 
   	To exclude *.exe" and all JUnit test cases, set filter type to "Exclude" and add two wildcard, one for "*.dll" and one for "*Test*"
   </p>
   <p>
-  	Note: the wildcard is case insensitive
+  	To exclude a directory, set filter to "**/dir_to_exclude/**"
+  </p>
+  <p>
+  	Note: (1) the wildcard is case insensitive, (2) all backslashes (&#92;) will be replaced with slashes (&#47;) 
   </p>
 </div>

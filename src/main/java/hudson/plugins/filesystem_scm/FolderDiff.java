@@ -25,6 +25,7 @@ public class FolderDiff implements Serializable {
 	
 	private String srcPath;
 	private String dstPath;
+	private boolean ignoreHidden;
 	private boolean filterEnabled;
 	private boolean includeFilter;
 	private String[] filters;
@@ -40,6 +41,10 @@ public class FolderDiff implements Serializable {
 	
 	public void setDstPath(String dstPath) {
 		this.dstPath = dstPath;
+	}
+	
+	public void setIgnoreHidden(boolean ignoreHidden) {
+		this.ignoreHidden = ignoreHidden;
 	}
 	
 	public void setIncludeFilter(String[] filters) {
@@ -87,18 +92,21 @@ public class FolderDiff implements Serializable {
 		File src = new File(srcPath);
 		File dst = new File(dstPath);
 		
-		IOFileFilter dirFilter = HiddenFileFilter.VISIBLE;
+		IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
 		AndFileFilter fileFilter = new AndFileFilter();
+		if ( ignoreHidden ) fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
+		else fileFilter.addFileFilter(TrueFileFilter.TRUE);
 		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
 		// only the creation date is updated, so we can't use the following AgeFileFiilter
 		// fileFilter.addFileFilter(new AgeFileFilter(time, false /* accept newer */));
-		fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
 		if ( filterEnabled && null != filters && filters.length > 0 ) {
-			WildcardFileFilter wcf = new WildcardFileFilter(filters, IOCase.INSENSITIVE);
-			if ( includeFilter ) {
-				fileFilter.addFileFilter(wcf);
-			} else {
-				fileFilter.addFileFilter(new NotFileFilter(wcf));				
+			for(int i=0; i<filters.length; i++) {
+				IOFileFilter iof = new SimpleAntWildcardFilter(filters[i]);
+				if ( includeFilter ) {
+					fileFilter.addFileFilter(iof);
+				} else {
+					fileFilter.addFileFilter(new NotFileFilter(iof));				
+				}
 			}
 		}
 		Iterator<File> it = (Iterator<File>)FileUtils.iterateFiles(src, fileFilter, dirFilter);
@@ -136,7 +144,7 @@ public class FolderDiff implements Serializable {
 	/**
 	 * <p>For each file in the destination folder
 	 * <ul>
-	 *   <li>if file is not in source, and it is in the allowDeleteList, this file will be deleted in the source</li>
+	 *   <li>if file is not in source, and it is in the allowDeleteList, this file will be deleted in the destination</li>
 	 * </ul>
 	 * 
 	 * <p>Note: the time parameter (1st param) is basically not used in the code. 
@@ -153,28 +161,36 @@ public class FolderDiff implements Serializable {
 		File src = new File(srcPath);
 		File dst = new File(dstPath);
 		
-		IOFileFilter dirFilter = HiddenFileFilter.VISIBLE;
+		IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
 		AndFileFilter fileFilter = new AndFileFilter();
+		if ( ignoreHidden ) fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
+		else fileFilter.addFileFilter(TrueFileFilter.TRUE);
 		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
 		// only the creation date is updated, so we can't use the following AgeFileFiilter
 		//fileFilter.addFileFilter(new AgeFileFilter(time, true /* accept older */));
-		fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
 		if ( filterEnabled && null != filters && filters.length > 0 ) {
-			WildcardFileFilter wcf = new WildcardFileFilter(filters, IOCase.INSENSITIVE);
-			if ( includeFilter ) {
-				fileFilter.addFileFilter(wcf);
-			} else {
-				fileFilter.addFileFilter(new NotFileFilter(wcf));				
+			for(int i=0; i<filters.length; i++) {
+				IOFileFilter wcf = new SimpleAntWildcardFilter(filters[i]);
+				if ( includeFilter ) {
+					fileFilter.addFileFilter(wcf);
+				} else {
+					fileFilter.addFileFilter(new NotFileFilter(wcf));				
+				}
 			}
 		}
-		Iterator<File> it = (Iterator<File>)FileUtils.iterateFiles(dst, fileFilter, dirFilter);
+		// this is the full list of all viewable/available source files
+		Collection<File> allSources = (Collection<File>)FileUtils.listFiles(src, fileFilter, dirFilter);
+		
+		// now get the list of all sources in workspace (destination)
+		Iterator<File> it = (Iterator<File>)FileUtils.iterateFiles(dst, TrueFileFilter.TRUE, TrueFileFilter.TRUE);
+		
 		ArrayList<Entry> list = new ArrayList<Entry>();
 		while(it.hasNext()) {
 			File file  = it.next();
 			try {
 				String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
 				File tmp = new File(src, relativeName);
-				if ( !tmp.exists() && (null == allowDeleteList || allowDeleteList.contains(relativeName)) ) {
+				if ( !allSources.contains(tmp) && (null == allowDeleteList || allowDeleteList.contains(relativeName)) ) {
 					log("Deleted file: " + relativeName);
 					list.add(new Entry(relativeName, Entry.Type.DELETED));
 					if ( breakOnceFound ) return list;
