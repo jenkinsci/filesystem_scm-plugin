@@ -3,8 +3,7 @@ package hudson.plugins.filesystem_scm;
 import java.io.*;
 import java.util.*;
 
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -15,12 +14,14 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
-import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.SCMRevisionState;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * {@link SCM} implementation which watches a file system folder.
@@ -108,7 +109,9 @@ public class FSSCM extends SCM {
 				
 		long start = System.currentTimeMillis();
 		PrintStream log = launcher.getListener().getLogger();
-		log.println("FSSCM.checkout " + path + " to " + workspace);
+		EnvVars env = build.getEnvironment(listener);
+		String expandedPath = env.expand(path);
+		log.println("FSSCM.checkout " + expandedPath + " to " + workspace);
 		Boolean b = Boolean.TRUE;
 
 		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getProject().getRootDir());
@@ -136,7 +139,7 @@ public class FSSCM extends SCM {
 		}
 		
 		RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
-		setupRemoteFolderDiff(callable, build.getProject(), allowDeleteList.getList());
+		setupRemoteFolderDiff(callable, build.getProject(), allowDeleteList.getList(), expandedPath);
 		List<FolderDiff.Entry> list = workspace.act(callable);
 		
 		// maintain the watch list
@@ -180,7 +183,17 @@ public class FSSCM extends SCM {
 		long start = System.currentTimeMillis();
 		
 		PrintStream log = launcher.getListener().getLogger();
-		log.println("FSSCM.pollChange: " + path);
+
+		String expandedPath = path;
+
+		AbstractBuild<?,?> lastCompletedBuild = project.getLastCompletedBuild();
+
+		if (lastCompletedBuild != null){
+			EnvVars env = lastCompletedBuild.getEnvironment(listener);
+			expandedPath = env.expand(expandedPath);
+		}
+
+		log.println("FSSCM.pollChange: " + expandedPath);
 		
 		AllowDeleteList allowDeleteList = new AllowDeleteList(project.getRootDir());
 		// we will only delete a file if it is listed in the allowDeleteList
@@ -196,7 +209,7 @@ public class FSSCM extends SCM {
 		}
 		
 		RemoteFolderDiff.PollChange callable = new RemoteFolderDiff.PollChange();
-		setupRemoteFolderDiff(callable, project, allowDeleteList.getList());
+		setupRemoteFolderDiff(callable, project, allowDeleteList.getList(), expandedPath);
 		
 		boolean changed = workspace.act(callable);
 		String str = callable.getLog();
@@ -206,9 +219,11 @@ public class FSSCM extends SCM {
 		log.println("FSSCM.poolChange completed in " + formatDuration(System.currentTimeMillis()-start));		
 		return changed;
 	}
-	
+    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList){
+	    setupRemoteFolderDiff(diff, project, allowDeleteList, path);
+    }
 	@SuppressWarnings("rawtypes")
-    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
+    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList, String expandedPath) {
 		Run lastBuild = project.getLastBuild();
 		if ( null == lastBuild ) {
 			diff.setLastBuildTime(0);
@@ -223,7 +238,7 @@ public class FSSCM extends SCM {
 			}
 		}
 		
-		diff.setSrcPath(path);
+		diff.setSrcPath(expandedPath);
 		
 		diff.setIgnoreHidden(!copyHidden);
 		
