@@ -12,25 +12,6 @@ import org.junit.Test;
 
 public class SimpleAntWildcardFilterTest {
 	
-	@Test
-	public void test1() throws IOException {
-		String tmp = System.getProperty("java.io.tmpdir");
-		//System.out.println(tmp);
-		String sep = System.getProperty("file.separator");
-		//System.out.println(sep);
-		File myDir = new File(tmp + sep + "abc001234" + sep + "def" + sep + "xyz.000");
-		myDir.mkdirs();
-		File f1 = new File(myDir, "aa.txt");
-		f1.createNewFile();
-		File f2 = new File(myDir, "bb.111");
-		f2.createNewFile();
-		File f3 = new File(myDir.getParentFile(), "ab.tx1");
-		f3.createNewFile();
-		
-		IOFileFilter iof = new SimpleAntWildcardFilter("C:/users/samn/**/a?.tx?");
-		Collection<File> coll = (Collection<File>)FileUtils.listFiles(new File(tmp + sep + "abc001234"), iof, HiddenFileFilter.VISIBLE);
-		Assert.assertEquals(2, coll.size());
-	}	
 
 	@Test
 	public void test2() {
