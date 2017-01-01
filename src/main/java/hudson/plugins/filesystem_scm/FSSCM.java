@@ -83,7 +83,7 @@ public class FSSCM extends SCM {
 	}
 
 	public String[] getFilters() {
-		return filters;
+		return filters != null ? Arrays.copyOf(filters, filters.length) : null;
 	}
 	
 	public boolean isFilterEnabled() {
@@ -266,11 +266,11 @@ public class FSSCM extends SCM {
         	} else {
         		try {
         			SimpleAntWildcardFilter filter = new SimpleAntWildcardFilter(value);
+        			return FormValidation.ok("Pattern is correct: " + filter.getPattern());
         		} catch ( Exception e ) {
         			return FormValidation.error(e, "Invalid wildcard pattern");
         		}
         	}
-        	return FormValidation.ok();
         }
         
         @Override

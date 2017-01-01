@@ -1,5 +1,6 @@
 package hudson.plugins.filesystem_scm;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.remoting.VirtualChannel;
 import java.io.*;
 import java.util.*;
@@ -47,13 +48,15 @@ public class FolderDiff<T> extends SlaveToMasterFileCallable<T> implements Seria
 	public void setIgnoreHidden(boolean ignoreHidden) {
 		this.ignoreHidden = ignoreHidden;
 	}
-	
+        
+	@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
 	public void setIncludeFilter(String[] filters) {
 		filterEnabled = true;
 		includeFilter = true;
 		this.filters = filters;
 	}
-	
+
+	@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
 	public void setExcludeFilter(String[] filters) {
 		filterEnabled = true;
 		includeFilter = false;
