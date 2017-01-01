@@ -16,6 +16,10 @@
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/File+System+SCM</url>  
   
+  <properties>
+    <jenkins.version>1.642.3</jenkins.version>
+  </properties>
+  
   <developers>
     <developer>
       <id>samngms</id>
@@ -46,7 +50,14 @@
             <url>http://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
+    
     <dependencies>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins.workflow</groupId>
+        <artifactId>workflow-aggregator</artifactId>
+        <version>2.4</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
 
     <scm>
