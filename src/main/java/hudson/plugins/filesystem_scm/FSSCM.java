@@ -19,8 +19,13 @@ import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.FormValidation;
+import javax.annotation.CheckForNull;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * {@link SCM} implementation which watches a file system folder.
@@ -38,60 +43,88 @@ public class FSSCM extends SCM {
 	/** If true, will copy hidden files and folders. Default is false.
 	 * 
 	 */
-	private boolean copyHidden;
-	/** If we have include/exclude filter, then this is true
-	 * 
-	 */
-	private boolean filterEnabled;
-	/** Is this filter a include filter or exclude filter
-	 * 
-	 */
-	private boolean includeFilter;
-	/** filters will be passed to org.apache.commons.io.filefilter.WildcardFileFilter
-	 * 
-	 */
-	private String[] filters;
-	
-	// Don't use DataBoundConsturctor, it is still not mature enough, many HTML form elements are not binded
-	// @DataBoundConstructor
+
+    private transient boolean copyHidden;
+    /**
+     * If we have include/exclude filter, then this is true.
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private transient boolean filterEnabled;
+    /**
+     * Is this filter a include filter or exclude filter
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private transient boolean includeFilter;
+    /**
+     * filters, which will be passed to {@link WildcardFileFilter}.
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private String[] filters;
+
+    /**
+     * Filter settings.
+     *
+     * @since TODO
+     */
+    @CheckForNull
+    private FilterSettings filterSettings;
+
+    @DataBoundConstructor
+    public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, FilterSettings filterSettings) {
+        this.path = path;
+        this.clearWorkspace = clearWorkspace;
+        this.copyHidden = copyHidden;
+        this.filterSettings = filterSettings;
+    }
+
+    @Deprecated
     public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter, String[] filters) {
-    	this.path = path;
-    	this.clearWorkspace = clearWorkspace;
-    	this.copyHidden = copyHidden;
-    	this.filterEnabled = filterEnabled;
-    	this.includeFilter = includeFilter;
-    	
-		// in hudson 1.337, in filters = null, XStream will throw NullPointerException
-		// this.filters = null;
-		this.filters = new String[0];
-   		if ( null != filters ) {
-   			Vector<String> v = new Vector<String>();
-   			for(int i=0; i<filters.length; i++) {
-   				// remove empty strings
-   				if ( StringUtils.isNotEmpty(filters[i]) ) {
-   					v.add(filters[i]);
-   				}
-   			}
-   			if ( v.size() > 0 ) {
-   				this.filters = (String[]) v.toArray(new String[1]);
-   			}
-   		}
+        this.path = path;
+        this.clearWorkspace = clearWorkspace;
+        this.copyHidden = copyHidden;
+
+        if (filterEnabled) {
+            List<FilterSelector> selectors = new ArrayList<>();
+            if (null != filters) {
+                for (String filter : filters) {
+                    // remove empty strings
+                    if (StringUtils.isNotEmpty(filter)) {
+                        selectors.add(new FilterSelector(filter));
+                    }
+                }
+            }
+            filterSettings = new FilterSettings(includeFilter, selectors);
+        }
     }
     
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public String[] getFilters() {
-		return filters != null ? Arrays.copyOf(filters, filters.length) : null;
-	}
+    /**
+     * @deprecated Use {@link #getFilterSettings()}.
+     */
+    @CheckForNull
+    public String[] getFilters() {
+        if (filterSettings == null) {
+            return null;
+        }
+        final List<String> wildcards = filterSettings.getWildcards();
+        return wildcards.toArray(new String[wildcards.size()]);
+    }
 	
 	public boolean isFilterEnabled() {
-		return filterEnabled;
+		return filterSettings != null;
 	}
 	
 	public boolean isIncludeFilter() {
-		return includeFilter;
+		return filterSettings != null ? filterSettings.isIncludeFilter() : false;
 	}
 	
 	public boolean isClearWorkspace() {
@@ -101,6 +134,27 @@ public class FSSCM extends SCM {
 	public boolean isCopyHidden() {
 		return copyHidden;
 	}
+
+    @CheckForNull
+    public FilterSettings getFilterSettings() {
+        return filterSettings;
+    }
+
+    protected Object readResolve() {
+        if (filterEnabled && filterSettings == null) {
+            final List<FilterSelector> selectors;
+            if (filters != null) {
+                selectors = new ArrayList<>(filters.length);
+                for (String value : filters) {
+                    selectors.add(new FilterSelector(value));
+                }
+            } else {
+                selectors = Collections.emptyList();
+            }
+            filterSettings = new FilterSettings(includeFilter, selectors);
+        }
+        return this;
+    }
 	
     @Override
 	public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
@@ -227,9 +281,12 @@ public class FSSCM extends SCM {
 		
 		diff.setIgnoreHidden(!copyHidden);
 		
-		if ( filterEnabled ) {
-			if ( includeFilter ) diff.setIncludeFilter(filters);
-			else diff.setExcludeFilter(filters);
+		if ( filterSettings != null ) {
+			if ( filterSettings.isIncludeFilter() )  {
+                            diff.setIncludeFilter(getFilters());
+                        } else { 
+                            diff.setExcludeFilter(getFilters());
+                        }
 		}		
 		
 		diff.setAllowDeleteList(allowDeleteList);
@@ -259,18 +316,15 @@ public class FSSCM extends SCM {
             return "File System";
         }
         
+        /**
+         * @deprecated Use {@link FilterSelector.DescriptorImpl#doCheckWildcard(java.lang.String)}
+         */
+        @Deprecated
+        @Restricted(NoExternalUse.class)
         public FormValidation doFilterCheck(@QueryParameter final String value) {
-        	if ( null == value || value.trim().length() == 0 ) return FormValidation.ok();
-        	if ( value.startsWith("/") || value.startsWith("\\") || value.matches("[a-zA-Z]:.*") ) {
-        		return FormValidation.error("Pattern can't be an absolute path");
-        	} else {
-        		try {
-        			SimpleAntWildcardFilter filter = new SimpleAntWildcardFilter(value);
-        			return FormValidation.ok("Pattern is correct: " + filter.getPattern());
-        		} catch ( Exception e ) {
-        			return FormValidation.error(e, "Invalid wildcard pattern");
-        		}
-        	}
+            return Jenkins.getActiveInstance()
+                    .getDescriptorByType(FilterSelector.DescriptorImpl.class)
+                    .doCheckWildcard(value);
         }
         
         @Override
@@ -278,16 +332,6 @@ public class FSSCM extends SCM {
             return true;
         }        
         
-        @Override
-        public FSSCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-        	String path = req.getParameter("fs_scm.path");
-        	String[] filters = req.getParameterValues("fs_scm.filters");
-        	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
-        	Boolean includeFilter = Boolean.valueOf(req.getParameter("fs_scm.includeFilter"));
-        	Boolean clearWorkspace = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.clearWorkspace")));
-        	Boolean copyHidden = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.copyHidden")));
-            return new FSSCM(path, clearWorkspace, copyHidden, filterEnabled, includeFilter, filters);
-        }
         
     }
 
