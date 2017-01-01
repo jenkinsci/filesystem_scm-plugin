@@ -9,13 +9,11 @@ import org.apache.commons.io.filefilter.*;
  * 
  * <p>This is the core logic for detecting if we need to checkout or pollchanges</p>
  * 
- * <p>Two methods to detect if the two folders are the same
+ * <p>Two methods to detect if the two folders are the same</p>
  * <ul>
  *   <li>check if there are new/modified files in the source folder</li>
  *   <li>check if there are deleted files in the source folder</li>
  * </ul>
- * </p>
- * 
  * @author Sam NG
  *
  */
@@ -214,7 +212,6 @@ public class FolderDiff implements Serializable {
 	
 	/** This function will convert e.stackTrace to String and call log(String) 
 	 * 
-	 * @param msg
 	 * @param e
 	 */
 	protected void log(Exception e ) {
