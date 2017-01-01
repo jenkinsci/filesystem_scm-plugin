@@ -1,10 +1,13 @@
 package hudson.plugins.filesystem_scm;
 
-import hudson.model.*;
+import hudson.model.Run;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.RepositoryBrowser;
 import hudson.util.XStream2;
 import java.util.*;
 import java.io.*;
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.SAXException;
 
 /** 
  * FileSystem base SCM ChangelogSet
@@ -23,9 +26,9 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet<Changelog> {
 	// not like other SCM, e.g. SVN, there may be 2 or 3 committed changes between builds
 	private List<Changelog> logs;
 	
-	public ChangelogSet(AbstractBuild<?, ?> build, List<FolderDiff.Entry> changes) {
-		super(build);
-		logs = new ArrayList<Changelog>();
+	public ChangelogSet(Run<?, ?> build, List<FolderDiff.Entry> changes) {
+		super(build, new FilesystemRepositoryBrowser());
+		logs = new ArrayList<>();
 		if (!changes.isEmpty()) {
 		    logs.add(new Changelog(this, changes));
 		}
@@ -93,9 +96,14 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet<Changelog> {
 			//xstream.omitField(ChangelogSet.ChangeLog.class, "parent");
 			//xstream.omitField(ChangelogSet.Path.class, "changeLog");
 		}
-		
-		@SuppressWarnings("rawtypes")
-        public ChangelogSet parse(AbstractBuild build, java.io.File file) throws FileNotFoundException {
+
+        @Override
+        public ChangeLogSet<? extends Entry> parse(Run build, RepositoryBrowser<?> browser, File changelogFile) throws IOException, SAXException {
+            return parse(build, changelogFile);
+        }
+      
+	@SuppressWarnings("rawtypes")
+        public ChangelogSet parse(Run<?,?> build, java.io.File file) throws FileNotFoundException {
 			FileInputStream in = null;
 			ChangelogSet out = null;
 			try {

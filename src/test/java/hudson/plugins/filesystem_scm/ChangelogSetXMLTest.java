@@ -1,5 +1,6 @@
 package hudson.plugins.filesystem_scm;
 
+import hudson.model.Run;
 import java.util.*;
 import org.junit.*;
 import java.io.*;
@@ -26,7 +27,7 @@ public class ChangelogSetXMLTest {
 		
 		handler.save(changeLogSet, tmp);
 		
-		ChangelogSet out = handler.parse(null, tmp);
+		ChangelogSet out = handler.parse((Run)null, tmp);
 
 		assertEquals(changeLogSet, out);
 	}

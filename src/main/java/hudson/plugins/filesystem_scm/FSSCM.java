@@ -8,9 +8,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
@@ -155,17 +153,18 @@ public class FSSCM extends SCM {
         }
         return this;
     }
-	
+
     @Override
-	public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
-	throws IOException, InterruptedException {
+    public void checkout(Run<?, ?> build, Launcher launcher, FilePath workspace, 
+            TaskListener listener, File changelogFile, SCMRevisionState baseline) 
+            throws IOException, InterruptedException {
+
 				
 		long start = System.currentTimeMillis();
 		PrintStream log = launcher.getListener().getLogger();
 		log.println("FSSCM.checkout " + path + " to " + workspace);
-		Boolean b = Boolean.TRUE;
 
-		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getProject().getRootDir());
+		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getParent().getRootDir());
 		
 		if ( clearWorkspace ) {
 			log.println("FSSCM.clearWorkspace...");
@@ -190,7 +189,7 @@ public class FSSCM extends SCM {
 		}
 		
 		RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
-		setupRemoteFolderDiff(callable, build.getProject(), allowDeleteList.getList());
+		setupRemoteFolderDiff(callable, build.getParent(), allowDeleteList.getList());
 		List<FolderDiff.Entry> list = workspace.act(callable);
 		
 		// maintain the watch list
@@ -213,7 +212,6 @@ public class FSSCM extends SCM {
 		handler.save(changeLogSet, changelogFile);
 		
 		log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis()-start));
-		return b;
 	}
 	
 	@Override
@@ -228,7 +226,7 @@ public class FSSCM extends SCM {
 	 *   <li>file deleted since last build time, we have to compare source and destination folder</li>
 	 * </ul>
 	 */
-	private boolean poll(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener) 
+	private boolean poll(Job<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener) 
 	    throws IOException, InterruptedException {
 		
 		long start = System.currentTimeMillis();
@@ -262,7 +260,7 @@ public class FSSCM extends SCM {
 	}
 	
 	@SuppressWarnings("rawtypes")
-    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
+    private void setupRemoteFolderDiff(RemoteFolderDiff diff, Job<?, ?> project, Set<String> allowDeleteList) {
 		Run lastBuild = project.getLastBuild();
 		if ( null == lastBuild ) {
 			diff.setLastBuildTime(0);
@@ -336,25 +334,19 @@ public class FSSCM extends SCM {
     }
 
     @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> build,
-            Launcher launcher, TaskListener listener) throws IOException,
-            InterruptedException {
+    public SCMRevisionState calcRevisionsFromBuild(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
         // we cannot really calculate a sensible revision state for a filesystem folder
         // therefore we return NONE and simply ignore the baseline in compareRemoteRevisionWith
         return SCMRevisionState.NONE;
     }
 
     @Override
-    protected PollingResult compareRemoteRevisionWith(
-            AbstractProject<?, ?> project, Launcher launcher,
-            FilePath workspace, TaskListener listener, SCMRevisionState baseline)
-            throws IOException, InterruptedException {
-        
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline) throws IOException, InterruptedException {
         if(poll(project, launcher, workspace, listener)) {
             return PollingResult.SIGNIFICANT;
         } else {
             return PollingResult.NO_CHANGES;
         }
     }
-
+    
 }
