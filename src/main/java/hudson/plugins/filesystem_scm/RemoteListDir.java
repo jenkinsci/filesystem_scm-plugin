@@ -6,10 +6,10 @@ import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 
-import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
+import jenkins.MasterToSlaveFileCallable;
 
-public class RemoteListDir implements FileCallable< Set<String> > { 
+public class RemoteListDir extends MasterToSlaveFileCallable< Set<String> > { 
 	
 	private static final long serialVersionUID = 1452212500874165127L;
 

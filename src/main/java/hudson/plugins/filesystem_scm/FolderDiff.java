@@ -1,7 +1,9 @@
 package hudson.plugins.filesystem_scm;
 
+import hudson.remoting.VirtualChannel;
 import java.io.*;
 import java.util.*;
+import jenkins.SlaveToMasterFileCallable;
 import org.apache.commons.io.*;
 import org.apache.commons.io.filefilter.*;
 
@@ -14,10 +16,11 @@ import org.apache.commons.io.filefilter.*;
  *   <li>check if there are new/modified files in the source folder</li>
  *   <li>check if there are deleted files in the source folder</li>
  * </ul>
+ * @param <T> Type of the item being returned by the callable
  * @author Sam NG
  *
  */
-public class FolderDiff implements Serializable {
+public class FolderDiff<T> extends SlaveToMasterFileCallable<T> implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -280,6 +283,12 @@ public class FolderDiff implements Serializable {
 	 */
 	protected void copyFile(File src, File dst) throws IOException {
 		FileUtils.copyFile(src, dst);
+	}
+
+	@Override
+	public T invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+		// Just a default behavior to retain the compatibility
+		throw new IOException("The method has not been overridden. Cannot execute");
 	}
 	
 	public static class Entry implements Serializable {

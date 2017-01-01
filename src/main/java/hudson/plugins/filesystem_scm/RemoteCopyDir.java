@@ -5,10 +5,10 @@ import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 
-import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
+import jenkins.SlaveToMasterFileCallable;
 
-public class RemoteCopyDir implements FileCallable<Boolean> {
+public class RemoteCopyDir extends SlaveToMasterFileCallable<Boolean> {
 
 	private static final long serialVersionUID = 1L; 
 
