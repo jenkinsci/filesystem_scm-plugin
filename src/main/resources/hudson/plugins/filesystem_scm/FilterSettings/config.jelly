@@ -5,6 +5,12 @@
     <f:checkbox title="${%includeFilter.title}"/>
   </f:entry>
   <f:entry> 
-    <f:repeatableProperty field="selectors" header="Filters" add="${%Add filter}"/>  
+    <f:repeatableProperty field="selectors" header="Filters" add="${%Add filter}">
+      <f:entry title="">
+        <div align="right">
+          <f:repeatableDeleteButton/>
+        </div>
+      </f:entry>
+    </f:repeatableProperty>  
   </f:entry>
 </j:jelly>
