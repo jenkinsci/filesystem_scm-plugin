@@ -4,7 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.remoting.VirtualChannel;
 import java.io.*;
 import java.util.*;
-import jenkins.SlaveToMasterFileCallable;
+import jenkins.MasterToSlaveFileCallable;
 import org.apache.commons.io.*;
 import org.apache.commons.io.filefilter.*;
 
@@ -21,7 +21,7 @@ import org.apache.commons.io.filefilter.*;
  * @author Sam NG
  *
  */
-public class FolderDiff<T> extends SlaveToMasterFileCallable<T> implements Serializable {
+public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	

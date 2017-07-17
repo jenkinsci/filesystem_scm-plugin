@@ -4,7 +4,7 @@
   <parent>
      <groupId>org.jenkins-ci.plugins</groupId>
      <artifactId>plugin</artifactId> 
-     <version>2.32</version>
+     <version>2.31</version>
   </parent>
       
   <groupId>hudson.plugins.filesystem_scm</groupId>
@@ -61,9 +61,32 @@
     
     <dependencies>
       <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>structs</artifactId>
+        <version>1.5</version>
+      </dependency>
+      <dependency>
         <groupId>org.jenkins-ci.plugins.workflow</groupId>
-        <artifactId>workflow-aggregator</artifactId>
+        <artifactId>workflow-cps</artifactId>
         <version>2.4</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins.workflow</groupId>
+        <artifactId>workflow-job</artifactId>
+        <version>2.4</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins.workflow</groupId>
+        <artifactId>workflow-api</artifactId>
+        <version>2.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins.workflow</groupId>
+        <artifactId>workflow-support</artifactId>
+        <version>2.1</version>
         <scope>test</scope>
       </dependency>
       <!-- Transient upper bound dependencies -->
@@ -72,14 +95,8 @@
         <artifactId>scm-api</artifactId>
         <version>1.3</version>
         <scope>test</scope>
-      </dependency>
+      </dependency> 
       <dependency>
-        <groupId>org.jenkins-ci.plugins</groupId>
-        <artifactId>structs</artifactId>
-        <version>1.5</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency> <!-- The core will override it anyway, no?  -->
         <groupId>org.jenkins-ci</groupId>
         <artifactId>annotation-indexer</artifactId>
         <version>1.9</version>

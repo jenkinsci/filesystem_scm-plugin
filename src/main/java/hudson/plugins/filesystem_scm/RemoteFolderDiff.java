@@ -1,14 +1,12 @@
 package hudson.plugins.filesystem_scm;
 
 import hudson.FilePath;
-import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
 import hudson.tools.JDKInstaller.Platform;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import jenkins.security.SlaveToMasterCallable;
 
 public class RemoteFolderDiff<T> extends FolderDiff<T> {
 

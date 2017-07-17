@@ -21,6 +21,7 @@ import javax.annotation.CheckForNull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -303,6 +304,7 @@ public class FSSCM extends SCM {
 	}
 
     @Extension
+    @Symbol("fsscm")
     public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
         public DescriptorImpl() {
             super(FSSCM.class, null);
@@ -348,5 +350,12 @@ public class FSSCM extends SCM {
             return PollingResult.NO_CHANGES;
         }
     }
+
+    @Override
+    public boolean requiresWorkspaceForPolling() {
+        return super.requiresWorkspaceForPolling(); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
     
 }
