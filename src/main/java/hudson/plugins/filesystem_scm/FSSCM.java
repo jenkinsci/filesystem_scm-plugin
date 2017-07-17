@@ -350,12 +350,4 @@ public class FSSCM extends SCM {
             return PollingResult.NO_CHANGES;
         }
     }
-
-    @Override
-    public boolean requiresWorkspaceForPolling() {
-        return super.requiresWorkspaceForPolling(); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    
-    
 }
