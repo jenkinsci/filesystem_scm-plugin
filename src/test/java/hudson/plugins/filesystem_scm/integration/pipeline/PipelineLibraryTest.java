@@ -27,15 +27,14 @@ public class PipelineLibraryTest {
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
     
-    //TODO: JenkinsRule just hangs
+    //TODO: JenkinsRule just hangs on mvn clean verify, passes for test file run
     @Test
-    @Ignore
     public void shouldSupportFSSCMsJenkinsfileSource() throws Exception {
 
         // Init repo
         File fsscmDir = tmpDir.newFolder("fsscm");
         File jenkinsfile = new File(fsscmDir, "Jenkinsfile");
-        FileUtils.write(jenkinsfile, "echo `Hello, world!`");
+        FileUtils.write(jenkinsfile, "echo `Hello`");
 
         // Create job
         WorkflowJob job = new WorkflowJob(j.jenkins, "MyPipeline");
