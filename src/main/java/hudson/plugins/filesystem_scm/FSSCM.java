@@ -304,7 +304,7 @@ public class FSSCM extends SCM {
 	}
 
     @Extension
-    @Symbol("fsscm")
+    @Symbol("filesystem")
     public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
         public DescriptorImpl() {
             super(FSSCM.class, null);
