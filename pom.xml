@@ -10,7 +10,7 @@
   <groupId>hudson.plugins.filesystem_scm</groupId>
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
-  <name>File System SCM</name>
+  <name>Jenkins File System SCM Plugin</name>
   <version>1.21-SNAPSHOT</version>
   
   <description>Using File System as SCM, done by checking file system last modified date.</description>
@@ -27,6 +27,12 @@
         <id>kutzi</id>
         <name>Christoph Kutzinski</name>
         <email>kutzi@gmx.de</email>
+        <timezone>+1</timezone>
+    </developer>
+    <developer>
+        <id>oleg_nenashev</id>
+        <name>Oleg Nenashev</name>
+        <email>o.v.nenashev@gmail.com</email>
         <timezone>+1</timezone>
     </developer>
   </developers>
