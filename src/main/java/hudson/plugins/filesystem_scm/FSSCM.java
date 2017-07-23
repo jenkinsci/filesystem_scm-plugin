@@ -8,9 +8,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
@@ -19,8 +17,14 @@ import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import hudson.util.FormValidation;
+import javax.annotation.CheckForNull;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * {@link SCM} implementation which watches a file system folder.
@@ -38,60 +42,88 @@ public class FSSCM extends SCM {
 	/** If true, will copy hidden files and folders. Default is false.
 	 * 
 	 */
-	private boolean copyHidden;
-	/** If we have include/exclude filter, then this is true
-	 * 
-	 */
-	private boolean filterEnabled;
-	/** Is this filter a include filter or exclude filter
-	 * 
-	 */
-	private boolean includeFilter;
-	/** filters will be passed to org.apache.commons.io.filefilter.WildcardFileFilter
-	 * 
-	 */
-	private String[] filters;
-	
-	// Don't use DataBoundConsturctor, it is still not mature enough, many HTML form elements are not binded
-	// @DataBoundConstructor
+
+    private transient boolean copyHidden;
+    /**
+     * If we have include/exclude filter, then this is true.
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private transient boolean filterEnabled;
+    /**
+     * Is this filter a include filter or exclude filter
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private transient boolean includeFilter;
+    /**
+     * filters, which will be passed to {@link WildcardFileFilter}.
+     *
+     * @deprecated Moved to {@link FilterSettings}
+     */
+    @Deprecated
+    private String[] filters;
+
+    /**
+     * Filter settings.
+     *
+     * @since TODO
+     */
+    @CheckForNull
+    private FilterSettings filterSettings;
+
+    @DataBoundConstructor
+    public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, FilterSettings filterSettings) {
+        this.path = path;
+        this.clearWorkspace = clearWorkspace;
+        this.copyHidden = copyHidden;
+        this.filterSettings = filterSettings;
+    }
+
+    @Deprecated
     public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter, String[] filters) {
-    	this.path = path;
-    	this.clearWorkspace = clearWorkspace;
-    	this.copyHidden = copyHidden;
-    	this.filterEnabled = filterEnabled;
-    	this.includeFilter = includeFilter;
-    	
-		// in hudson 1.337, in filters = null, XStream will throw NullPointerException
-		// this.filters = null;
-		this.filters = new String[0];
-   		if ( null != filters ) {
-   			Vector<String> v = new Vector<String>();
-   			for(int i=0; i<filters.length; i++) {
-   				// remove empty strings
-   				if ( StringUtils.isNotEmpty(filters[i]) ) {
-   					v.add(filters[i]);
-   				}
-   			}
-   			if ( v.size() > 0 ) {
-   				this.filters = (String[]) v.toArray(new String[1]);
-   			}
-   		}
+        this.path = path;
+        this.clearWorkspace = clearWorkspace;
+        this.copyHidden = copyHidden;
+
+        if (filterEnabled) {
+            List<FilterSelector> selectors = new ArrayList<>();
+            if (null != filters) {
+                for (String filter : filters) {
+                    // remove empty strings
+                    if (StringUtils.isNotEmpty(filter)) {
+                        selectors.add(new FilterSelector(filter));
+                    }
+                }
+            }
+            filterSettings = new FilterSettings(includeFilter, selectors);
+        }
     }
     
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public String[] getFilters() {
-		return filters;
-	}
+    /**
+     * @deprecated Use {@link #getFilterSettings()}.
+     */
+    @CheckForNull
+    public String[] getFilters() {
+        if (filterSettings == null) {
+            return null;
+        }
+        final List<String> wildcards = filterSettings.getWildcards();
+        return wildcards.toArray(new String[wildcards.size()]);
+    }
 	
 	public boolean isFilterEnabled() {
-		return filterEnabled;
+		return filterSettings != null;
 	}
 	
 	public boolean isIncludeFilter() {
-		return includeFilter;
+		return filterSettings != null ? filterSettings.isIncludeFilter() : false;
 	}
 	
 	public boolean isClearWorkspace() {
@@ -101,17 +133,39 @@ public class FSSCM extends SCM {
 	public boolean isCopyHidden() {
 		return copyHidden;
 	}
-	
+
+    @CheckForNull
+    public FilterSettings getFilterSettings() {
+        return filterSettings;
+    }
+
+    protected Object readResolve() {
+        if (filterEnabled && filterSettings == null) {
+            final List<FilterSelector> selectors;
+            if (filters != null) {
+                selectors = new ArrayList<>(filters.length);
+                for (String value : filters) {
+                    selectors.add(new FilterSelector(value));
+                }
+            } else {
+                selectors = Collections.emptyList();
+            }
+            filterSettings = new FilterSettings(includeFilter, selectors);
+        }
+        return this;
+    }
+
     @Override
-	public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) 
-	throws IOException, InterruptedException {
+    public void checkout(Run<?, ?> build, Launcher launcher, FilePath workspace, 
+            TaskListener listener, File changelogFile, SCMRevisionState baseline) 
+            throws IOException, InterruptedException {
+
 				
 		long start = System.currentTimeMillis();
 		PrintStream log = launcher.getListener().getLogger();
 		log.println("FSSCM.checkout " + path + " to " + workspace);
-		Boolean b = Boolean.TRUE;
 
-		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getProject().getRootDir());
+		AllowDeleteList allowDeleteList = new AllowDeleteList(build.getParent().getRootDir());
 		
 		if ( clearWorkspace ) {
 			log.println("FSSCM.clearWorkspace...");
@@ -136,7 +190,7 @@ public class FSSCM extends SCM {
 		}
 		
 		RemoteFolderDiff.CheckOut callable = new RemoteFolderDiff.CheckOut();
-		setupRemoteFolderDiff(callable, build.getProject(), allowDeleteList.getList());
+		setupRemoteFolderDiff(callable, build.getParent(), allowDeleteList.getList());
 		List<FolderDiff.Entry> list = workspace.act(callable);
 		
 		// maintain the watch list
@@ -159,7 +213,6 @@ public class FSSCM extends SCM {
 		handler.save(changeLogSet, changelogFile);
 		
 		log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis()-start));
-		return b;
 	}
 	
 	@Override
@@ -174,7 +227,7 @@ public class FSSCM extends SCM {
 	 *   <li>file deleted since last build time, we have to compare source and destination folder</li>
 	 * </ul>
 	 */
-	private boolean poll(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener) 
+	private boolean poll(Job<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener) 
 	    throws IOException, InterruptedException {
 		
 		long start = System.currentTimeMillis();
@@ -208,7 +261,7 @@ public class FSSCM extends SCM {
 	}
 	
 	@SuppressWarnings("rawtypes")
-    private void setupRemoteFolderDiff(RemoteFolderDiff diff, AbstractProject project, Set<String> allowDeleteList) {
+    private void setupRemoteFolderDiff(RemoteFolderDiff diff, Job<?, ?> project, Set<String> allowDeleteList) {
 		Run lastBuild = project.getLastBuild();
 		if ( null == lastBuild ) {
 			diff.setLastBuildTime(0);
@@ -227,9 +280,12 @@ public class FSSCM extends SCM {
 		
 		diff.setIgnoreHidden(!copyHidden);
 		
-		if ( filterEnabled ) {
-			if ( includeFilter ) diff.setIncludeFilter(filters);
-			else diff.setExcludeFilter(filters);
+		if ( filterSettings != null ) {
+			if ( filterSettings.isIncludeFilter() )  {
+                            diff.setIncludeFilter(getFilters());
+                        } else { 
+                            diff.setExcludeFilter(getFilters());
+                        }
 		}		
 		
 		diff.setAllowDeleteList(allowDeleteList);
@@ -248,6 +304,7 @@ public class FSSCM extends SCM {
 	}
 
     @Extension
+    @Symbol("filesystem")
     public static final class DescriptorImpl extends SCMDescriptor<FSSCM> {
         public DescriptorImpl() {
             super(FSSCM.class, null);
@@ -259,18 +316,15 @@ public class FSSCM extends SCM {
             return "File System";
         }
         
+        /**
+         * @deprecated Use {@link FilterSelector.DescriptorImpl#doCheckWildcard(java.lang.String)}
+         */
+        @Deprecated
+        @Restricted(NoExternalUse.class)
         public FormValidation doFilterCheck(@QueryParameter final String value) {
-        	if ( null == value || value.trim().length() == 0 ) return FormValidation.ok();
-        	if ( value.startsWith("/") || value.startsWith("\\") || value.matches("[a-zA-Z]:.*") ) {
-        		return FormValidation.error("Pattern can't be an absolute path");
-        	} else {
-        		try {
-        			SimpleAntWildcardFilter filter = new SimpleAntWildcardFilter(value);
-        		} catch ( Exception e ) {
-        			return FormValidation.error(e, "Invalid wildcard pattern");
-        		}
-        	}
-        	return FormValidation.ok();
+            return Jenkins.getActiveInstance()
+                    .getDescriptorByType(FilterSelector.DescriptorImpl.class)
+                    .doCheckWildcard(value);
         }
         
         @Override
@@ -278,39 +332,22 @@ public class FSSCM extends SCM {
             return true;
         }        
         
-        @Override
-        public FSSCM newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-        	String path = req.getParameter("fs_scm.path");
-        	String[] filters = req.getParameterValues("fs_scm.filters");
-        	Boolean filterEnabled = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.filterEnabled")));
-        	Boolean includeFilter = Boolean.valueOf(req.getParameter("fs_scm.includeFilter"));
-        	Boolean clearWorkspace = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.clearWorkspace")));
-        	Boolean copyHidden = Boolean.valueOf("on".equalsIgnoreCase(req.getParameter("fs_scm.copyHidden")));
-            return new FSSCM(path, clearWorkspace, copyHidden, filterEnabled, includeFilter, filters);
-        }
         
     }
 
     @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> build,
-            Launcher launcher, TaskListener listener) throws IOException,
-            InterruptedException {
+    public SCMRevisionState calcRevisionsFromBuild(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
         // we cannot really calculate a sensible revision state for a filesystem folder
         // therefore we return NONE and simply ignore the baseline in compareRemoteRevisionWith
         return SCMRevisionState.NONE;
     }
 
     @Override
-    protected PollingResult compareRemoteRevisionWith(
-            AbstractProject<?, ?> project, Launcher launcher,
-            FilePath workspace, TaskListener listener, SCMRevisionState baseline)
-            throws IOException, InterruptedException {
-        
+    public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline) throws IOException, InterruptedException {
         if(poll(project, launcher, workspace, listener)) {
             return PollingResult.SIGNIFICANT;
         } else {
             return PollingResult.NO_CHANGES;
         }
     }
-
 }
