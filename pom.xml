@@ -11,7 +11,7 @@
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>Jenkins File System SCM Plugin</name>
-  <version>1.21-SNAPSHOT</version>
+  <version>1.21-alpha-1-SNAPSHOT</version>
   
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/File+System+SCM</url>  
