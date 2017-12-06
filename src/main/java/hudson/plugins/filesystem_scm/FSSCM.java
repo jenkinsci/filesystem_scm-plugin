@@ -123,7 +123,7 @@ public class FSSCM extends SCM {
 	}
 	
 	public boolean isIncludeFilter() {
-		return filterSettings != null ? filterSettings.isIncludeFilter() : false;
+		return filterSettings != null && filterSettings.isIncludeFilter();
 	}
 	
 	public boolean isClearWorkspace() {
@@ -330,10 +330,14 @@ public class FSSCM extends SCM {
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             return true;
-        }        
-        
-        
-    }
+        }
+
+		@Override
+		public boolean isApplicable(Job project) {
+        	// All job types are supported, the plugin does not depend on AbstractProject/AbstractBuild anymore
+			return true;
+		}
+	}
 
     @Override
     public SCMRevisionState calcRevisionsFromBuild(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
