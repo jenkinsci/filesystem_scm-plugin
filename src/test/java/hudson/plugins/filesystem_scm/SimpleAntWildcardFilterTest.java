@@ -8,17 +8,18 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class SimpleAntWildcardFilterTest {
 	
+	@Rule
+	public TemporaryFolder tmpDir = new TemporaryFolder();
+	
 	@Test
-	public void test1() throws IOException {
-		String tmp = System.getProperty("java.io.tmpdir");
-		//System.out.println(tmp);
-		String sep = System.getProperty("file.separator");
-		//System.out.println(sep);
-		File myDir = new File(tmp + sep + "abc001234" + sep + "def" + sep + "xyz.000");
+	public void test1() throws IOException {;
+		File myDir = new File(tmpDir.getRoot(), "abc001234/def/xyz.000");
 		myDir.mkdirs();
 		File f1 = new File(myDir, "aa.txt");
 		f1.createNewFile();
@@ -27,8 +28,9 @@ public class SimpleAntWildcardFilterTest {
 		File f3 = new File(myDir.getParentFile(), "ab.tx1");
 		f3.createNewFile();
 		
-		IOFileFilter iof = new SimpleAntWildcardFilter("C:/users/samn/**/a?.tx?");
-		Collection<File> coll = (Collection<File>)FileUtils.listFiles(new File(tmp + sep + "abc001234"), iof, HiddenFileFilter.VISIBLE);
+		IOFileFilter iof = new SimpleAntWildcardFilter(tmpDir.getRoot().getAbsolutePath() + "/**/a?.tx?");
+		File checkDir = new File(tmpDir.getRoot(), "abc001234");
+		Collection<File> coll = FileUtils.listFiles(checkDir, iof, HiddenFileFilter.VISIBLE);
 		Assert.assertEquals(2, coll.size());
 	}	
 

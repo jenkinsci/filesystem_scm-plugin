@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.CheckForNull;
 
 /** Represents a Changelog record (ChangeLogSet.Entry) in ChangelogSet
  * 
@@ -102,12 +103,13 @@ public class Changelog extends hudson.scm.ChangeLogSet.Entry {
 		this.parent = (ChangelogSet)parent;
 	}
 
+	@CheckForNull
 	public Date getDate() {
-		return date;
+		return date != null ? (Date)date.clone() : null;
 	}
 	
 	public void setDate(Date date) {
-		this.date = date;
+		this.date = date != null ? (Date)date.clone() : null;
 	}
 
 	@Override

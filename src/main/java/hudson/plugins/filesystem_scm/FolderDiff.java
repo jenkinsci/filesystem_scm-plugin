@@ -1,7 +1,10 @@
 package hudson.plugins.filesystem_scm;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.remoting.VirtualChannel;
 import java.io.*;
 import java.util.*;
+import jenkins.MasterToSlaveFileCallable;
 import org.apache.commons.io.*;
 import org.apache.commons.io.filefilter.*;
 
@@ -9,17 +12,16 @@ import org.apache.commons.io.filefilter.*;
  * 
  * <p>This is the core logic for detecting if we need to checkout or pollchanges</p>
  * 
- * <p>Two methods to detect if the two folders are the same
+ * <p>Two methods to detect if the two folders are the same</p>
  * <ul>
  *   <li>check if there are new/modified files in the source folder</li>
  *   <li>check if there are deleted files in the source folder</li>
  * </ul>
- * </p>
- * 
+ * @param <T> Type of the item being returned by the callable
  * @author Sam NG
  *
  */
-public class FolderDiff implements Serializable {
+public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -46,13 +48,15 @@ public class FolderDiff implements Serializable {
 	public void setIgnoreHidden(boolean ignoreHidden) {
 		this.ignoreHidden = ignoreHidden;
 	}
-	
+        
+	@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
 	public void setIncludeFilter(String[] filters) {
 		filterEnabled = true;
 		includeFilter = true;
 		this.filters = filters;
 	}
-	
+
+	@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
 	public void setExcludeFilter(String[] filters) {
 		filterEnabled = true;
 		includeFilter = false;
@@ -214,7 +218,6 @@ public class FolderDiff implements Serializable {
 	
 	/** This function will convert e.stackTrace to String and call log(String) 
 	 * 
-	 * @param msg
 	 * @param e
 	 */
 	protected void log(Exception e ) {
@@ -283,6 +286,12 @@ public class FolderDiff implements Serializable {
 	 */
 	protected void copyFile(File src, File dst) throws IOException {
 		FileUtils.copyFile(src, dst);
+	}
+
+	@Override
+	public T invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+		// Just a default behavior to retain the compatibility
+		throw new IOException("The method has not been overridden. Cannot execute");
 	}
 	
 	public static class Entry implements Serializable {

@@ -1,7 +1,6 @@
 package hudson.plugins.filesystem_scm;
 
 import hudson.FilePath;
-import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
 import hudson.tools.JDKInstaller.Platform;
 
@@ -9,7 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RemoteFolderDiff extends FolderDiff {
+public class RemoteFolderDiff<T> extends FolderDiff<T> {
 
 	protected StringBuffer buf;
 	protected long lastBuildTime;
@@ -71,10 +70,11 @@ public class RemoteFolderDiff extends FolderDiff {
 		return buf.toString();
 	}
 	
-	public static class PollChange extends RemoteFolderDiff implements FileCallable<Boolean> {
+	public static class PollChange extends RemoteFolderDiff<Boolean> {
 		
 		private static final long serialVersionUID = 1L; 
-		
+
+		@Override
 		public Boolean invoke(File workspace, VirtualChannel channel) throws IOException {
 			setDstPath(workspace.getAbsolutePath());
 			List<FolderDiff.Entry> newFiles = getNewOrModifiedFiles(lastBuildTime, true, true);
@@ -85,10 +85,11 @@ public class RemoteFolderDiff extends FolderDiff {
 		}		
 	}
 	
-	public static class CheckOut extends RemoteFolderDiff implements FileCallable< List<FolderDiff.Entry> > {
+	public static class CheckOut extends RemoteFolderDiff<List<FolderDiff.Entry>> {
 
 		private static final long serialVersionUID = 1L; 
 
+		@Override
 		public List<FolderDiff.Entry> invoke(File workspace, VirtualChannel channel) throws IOException {
 			setDstPath(workspace.getAbsolutePath());
 			List<FolderDiff.Entry> newFiles = getNewOrModifiedFiles(lastBuildTime, false, false);
