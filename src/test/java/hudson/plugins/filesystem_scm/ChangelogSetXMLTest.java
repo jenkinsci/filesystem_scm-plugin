@@ -31,4 +31,11 @@ public class ChangelogSetXMLTest {
 
 		assertEquals(changeLogSet, out);
 	}
+	
+	@Test
+	public void save_nullFile_noException() throws FileNotFoundException {
+		ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer(); 
+		File changelogFile = null;
+		handler.save(changeLogSet, changelogFile);
+	}
 }
