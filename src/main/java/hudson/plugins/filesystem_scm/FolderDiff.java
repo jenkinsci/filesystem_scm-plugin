@@ -97,22 +97,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 		File dst = new File(dstPath);
 		
 		IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
-		AndFileFilter fileFilter = new AndFileFilter();
-		if ( ignoreHidden ) fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
-		else fileFilter.addFileFilter(TrueFileFilter.TRUE);
-		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
-		// only the creation date is updated, so we can't use the following AgeFileFiilter
-		// fileFilter.addFileFilter(new AgeFileFilter(time, false /* accept newer */));
-		if ( filterEnabled && null != filters && filters.length > 0 ) {
-			for(int i=0; i<filters.length; i++) {
-				IOFileFilter iof = new SimpleAntWildcardFilter(filters[i]);
-				if ( includeFilter ) {
-					fileFilter.addFileFilter(iof);
-				} else {
-					fileFilter.addFileFilter(new NotFileFilter(iof));				
-				}
-			}
-		}
+		AndFileFilter fileFilter = createAntPatternFileFilter();
 		Iterator<File> it = (Iterator<File>)FileUtils.iterateFiles(src, fileFilter, dirFilter);
 		ArrayList<Entry> list = new ArrayList<Entry>();
 		while( it.hasNext() ) {
@@ -144,6 +129,26 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 		}
 		return list;
 	}
+
+	private AndFileFilter createAntPatternFileFilter() {
+		AndFileFilter fileFilter = new AndFileFilter();
+		if ( ignoreHidden ) fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
+		else fileFilter.addFileFilter(TrueFileFilter.TRUE);
+		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
+		// only the creation date is updated, so we can't use the following AgeFileFiilter
+		// fileFilter.addFileFilter(new AgeFileFilter(time, false /* accept newer */));
+		if ( filterEnabled && null != filters && filters.length > 0 ) {
+			for(int i=0; i<filters.length; i++) {
+				IOFileFilter iof = new SimpleAntWildcardFilter(filters[i]);
+				if ( includeFilter ) {
+					fileFilter.addFileFilter(iof);
+				} else {
+					fileFilter.addFileFilter(new NotFileFilter(iof));				
+				}
+			}
+		}
+		return fileFilter;
+	}
 	
 	/**
 	 * <p>For each file in the destination folder
@@ -166,22 +171,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 		File dst = new File(dstPath);
 		
 		IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
-		AndFileFilter fileFilter = new AndFileFilter();
-		if ( ignoreHidden ) fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
-		else fileFilter.addFileFilter(TrueFileFilter.TRUE);
-		// AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows, the lastModifiedDate is not changed
-		// only the creation date is updated, so we can't use the following AgeFileFiilter
-		//fileFilter.addFileFilter(new AgeFileFilter(time, true /* accept older */));
-		if ( filterEnabled && null != filters && filters.length > 0 ) {
-			for(int i=0; i<filters.length; i++) {
-				IOFileFilter wcf = new SimpleAntWildcardFilter(filters[i]);
-				if ( includeFilter ) {
-					fileFilter.addFileFilter(wcf);
-				} else {
-					fileFilter.addFileFilter(new NotFileFilter(wcf));				
-				}
-			}
-		}
+		AndFileFilter fileFilter = createAntPatternFileFilter();
 		// this is the full list of all viewable/available source files
 		Collection<File> allSources = (Collection<File>)FileUtils.listFiles(src, fileFilter, dirFilter);
 		
