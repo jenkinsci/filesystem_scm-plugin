@@ -11,6 +11,7 @@ import hudson.Launcher;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.filesystem_scm.ChangelogSet.XMLSerializer;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
 import hudson.scm.SCMRevisionState;
@@ -208,16 +209,28 @@ public class FSSCM extends SCM {
 		String str = callable.getLog();
 		if ( str.length() > 0 ) log.println(str);
 		
-		ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
-		ChangelogSet changeLogSet = new ChangelogSet(build, list);
-		handler.save(changeLogSet, changelogFile);
+		processChangelog(build, changelogFile, list);
 		
 		log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis()-start));
+	}
+
+	protected void processChangelog(Run<?, ?> build, File changelogFile, List<FolderDiff.Entry> list)
+			throws FileNotFoundException {
+		// checking for null as the @CheckForNull Annotation @asks for by SCM.checkout 
+		if(changelogFile!=null) {
+			ChangelogSet.XMLSerializer serializer = createXMLSerializer();
+			ChangelogSet changeLogSet = new ChangelogSet(build, list);
+			serializer.save(changeLogSet, changelogFile);
+		}
+	}
+
+	private XMLSerializer createXMLSerializer() {
+		return new ChangelogSet.XMLSerializer();
 	}
 	
 	@Override
 	public ChangeLogParser createChangeLogParser() {
-		return new ChangelogSet.XMLSerializer();
+		return createXMLSerializer();
 	}
 
 	/**
