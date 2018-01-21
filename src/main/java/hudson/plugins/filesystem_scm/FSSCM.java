@@ -84,11 +84,12 @@ public class FSSCM extends SCM {
 
     @Deprecated
     public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter, String[] filters) {
-        this.path = path;
-        this.clearWorkspace = clearWorkspace;
-        this.copyHidden = copyHidden;
+    		this(path, clearWorkspace, copyHidden, createFilterSettings(filterEnabled, includeFilter, filters));
+    }
 
-        if (filterEnabled) {
+	private static FilterSettings createFilterSettings(boolean filterEnabled, boolean includeFilter, String[] filters) {
+		FilterSettings filterSettings;
+		if (filterEnabled) {
             List<FilterSelector> selectors = new ArrayList<>();
             if (null != filters) {
                 for (String filter : filters) {
@@ -99,8 +100,11 @@ public class FSSCM extends SCM {
                 }
             }
             filterSettings = new FilterSettings(includeFilter, selectors);
+        }else {
+        		filterSettings = null;
         }
-    }
+		return filterSettings;
+	}
     
     public String getPath() {
         return path;
