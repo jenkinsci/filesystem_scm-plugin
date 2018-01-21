@@ -115,14 +115,14 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet<Changelog> {
 			return out;
 		}
 		
-		public void save(ChangelogSet changeLogSet, File file) throws FileNotFoundException {
+		public void save(ChangelogSet changeLogSet, File changelogFile) throws FileNotFoundException {
 			FileOutputStream out = null;
 			try {
-				out = new FileOutputStream(file);
+				out = new FileOutputStream(changelogFile);
 				xstream.toXML(changeLogSet, out);
 			} finally {
 				IOUtils.closeQuietly(out);
-			}
+			}				
 		}
 	}
 }
