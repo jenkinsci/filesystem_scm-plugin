@@ -1,6 +1,7 @@
 package hudson.plugins.filesystem_scm;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import hudson.Launcher;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.filesystem_scm.ChangelogSet.XMLSerializer;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.PollingResult;
 import hudson.scm.SCM;
@@ -172,9 +174,13 @@ public class FSSCM extends SCM {
     }
 
     @Override
+    public ChangeLogParser createChangeLogParser() {
+        return new ChangelogSet.XMLSerializer();
+    }
+
+    @Override
     public void checkout(Run<?, ?> build, Launcher launcher, FilePath workspace, TaskListener listener,
             File changelogFile, SCMRevisionState baseline) throws IOException, InterruptedException {
-
         long start = System.currentTimeMillis();
         PrintStream log = launcher.getListener().getLogger();
         log.println("FSSCM.checkout " + path + " to " + workspace);
@@ -224,15 +230,22 @@ public class FSSCM extends SCM {
         if (str.length() > 0)
             log.println(str);
 
-        ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
-        ChangelogSet changeLogSet = new ChangelogSet(build, list);
-        handler.save(changeLogSet, changelogFile);
+        processChangelog(build, changelogFile, list);
 
         log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis() - start));
     }
 
-    @Override
-    public ChangeLogParser createChangeLogParser() {
+    protected void processChangelog(Run<?, ?> build, File changelogFile, List<FolderDiff.Entry> list)
+            throws FileNotFoundException {
+        // checking for null as the @CheckForNull Annotation @asks for by SCM.checkout
+        if (changelogFile != null) {
+            ChangelogSet.XMLSerializer serializer = createXMLSerializer();
+            ChangelogSet changeLogSet = new ChangelogSet(build, list);
+            serializer.save(changeLogSet, changelogFile);
+        }
+    }
+
+    private XMLSerializer createXMLSerializer() {
         return new ChangelogSet.XMLSerializer();
     }
 
