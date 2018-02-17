@@ -165,7 +165,7 @@ public class FolderDiffTest {
             }
         });
         FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
+        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
@@ -181,7 +181,7 @@ public class FolderDiffTest {
             }
         });
         FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
+        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
@@ -198,7 +198,7 @@ public class FolderDiffTest {
             }
         });
         FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
+        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
@@ -221,7 +221,7 @@ public class FolderDiffTest {
         });
         FolderDiff diff = getFolderDiff();
         diff.setAllowDeleteList(allowDeleteList);
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
+        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 

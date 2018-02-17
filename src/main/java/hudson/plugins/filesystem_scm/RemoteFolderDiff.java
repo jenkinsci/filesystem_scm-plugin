@@ -84,7 +84,7 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
                 return Boolean.TRUE;
             if (-1 == lastSuccessfulBuildTime)
                 return Boolean.FALSE;
-            List<FolderDiff.Entry> delFiles = getDeletedFiles(lastSuccessfulBuildTime, true, true);
+            List<FolderDiff.Entry> delFiles = getDeletedFiles(lastSuccessfulBuildTime, true);
             return delFiles.size() > 0;
         }
     }
@@ -97,7 +97,7 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
         public List<FolderDiff.Entry> invoke(File workspace, VirtualChannel channel) throws IOException {
             setDstPath(workspace.getAbsolutePath());
             List<FolderDiff.Entry> newFiles = getNewOrModifiedFiles(lastBuildTime, false);
-            List<FolderDiff.Entry> delFiles = getDeletedFiles(lastSuccessfulBuildTime, false, false);
+            List<FolderDiff.Entry> delFiles = getDeletedFiles(lastSuccessfulBuildTime, false);
             List<FolderDiff.Entry> files = new ArrayList<FolderDiff.Entry>();
             files.addAll(newFiles);
             files.addAll(delFiles);

@@ -121,7 +121,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * 
      * @return the list of new or modified files
      */
-    public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound, boolean testRun) {
+    public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound) {
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
@@ -146,12 +146,11 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                     log("Modified file: " + relativeName);
                 }
                 if (newOrModified) {
-                    if (breakOnceFound)
+                    if (breakOnceFound) {
                         return list;
-                    if (!testRun) {
-                        // FileUtils.copyFile(file, tmp);
-                        copyFile(file, tmp);
                     }
+                    // FileUtils.copyFile(file, tmp);
+                    copyFile(file, tmp);
                 }
             } catch (IOException e) {
                 log(e);
@@ -211,7 +210,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * 
      * @return the list of deleted files
      */
-    public List<Entry> getDeletedFiles(long time, boolean breakOnceFound, boolean testRun) {
+    public List<Entry> getDeletedFiles(long time, boolean breakOnceFound) {
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
@@ -232,17 +231,16 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                 if (!allSources.contains(tmp) && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
                     log("Deleted file: " + relativeName);
                     list.add(new Entry(relativeName, Entry.Type.DELETED));
-                    if (breakOnceFound)
+                    if (breakOnceFound) {
                         return list;
-                    if (!testRun) {
-                        try {
-                            boolean deleted = file.delete();
-                            if (!deleted) {
-                                log("file.delete() failed: " + file.getAbsolutePath());
-                            }
-                        } catch (SecurityException e) {
-                            log("Can't delete " + file.getAbsolutePath(), e);
+                    }
+                    try {
+                        boolean deleted = deleteFile(file);
+                        if (!deleted) {
+                            log("file.delete() failed: " + file.getAbsolutePath());
                         }
+                    } catch (SecurityException e) {
+                        log("Can't delete " + file.getAbsolutePath(), e);
                     }
                 }
             } catch (IOException e) {
@@ -250,6 +248,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             }
         }
         return list;
+    }
+
+    protected boolean deleteFile(File file) {
+        return file.delete();
     }
 
     /**
