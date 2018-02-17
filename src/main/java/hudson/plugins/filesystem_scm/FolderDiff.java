@@ -19,6 +19,7 @@ import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.plugins.filesystem_scm.FolderDiff.Entry.Type;
 import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
 
@@ -133,23 +134,20 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             File file = it.next();
             try {
                 String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
-                boolean newOrModified = false;
                 // need to change dst to see if there is such a file
                 File tmp = new File(dst, relativeName);
-                if (!tmp.exists()) {
-                    newOrModified = true;
-                    list.add(new Entry(relativeName, Entry.Type.NEW));
-                    log("New file: " + relativeName);
-                } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) {
-                    newOrModified = true;
-                    list.add(new Entry(relativeName, Entry.Type.MODIFIED));
-                    log("Modified file: " + relativeName);
+                boolean newOrModified = true;
+                if (!tmp.exists()) {// new
+                    addAndLog(list, relativeName, Entry.Type.NEW);
+                } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
+                    addAndLog(list, relativeName, Entry.Type.MODIFIED);
+                } else {
+                    newOrModified = false;
                 }
                 if (newOrModified) {
                     if (breakOnceFound) {
                         return list;
                     }
-                    // FileUtils.copyFile(file, tmp);
                     copyFile(file, tmp);
                 }
             } catch (IOException e) {
@@ -157,6 +155,11 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             }
         }
         return list;
+    }
+
+    private void addAndLog(ArrayList<Entry> list, String relativeName, Type type) {
+        list.add(new Entry(relativeName, type));
+        log(type.name() + " file: " + relativeName);
     }
 
     private AndFileFilter createAntPatternFileFilter() {
@@ -226,8 +229,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                 String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
                 File tmp = new File(src, relativeName);
                 if (!allSources.contains(tmp) && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
-                    log("Deleted file: " + relativeName);
-                    list.add(new Entry(relativeName, Entry.Type.DELETED));
+                    addAndLog(list, relativeName, Type.DELETED);
                     if (breakOnceFound) {
                         return list;
                     }
@@ -339,6 +341,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      */
     protected void copyFile(File src, File dst) throws IOException {
         FileUtils.copyFile(src, dst);
+        // adjust file permissions here maybe
     }
 
     @Override
