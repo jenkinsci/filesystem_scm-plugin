@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import hudson.FilePath;
+import hudson.os.PosixException;
 import hudson.remoting.VirtualChannel;
 import hudson.tools.JDKInstaller.Platform;
 
@@ -44,28 +45,36 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
     protected void copyFile(File src, File dst) throws IOException {
         FilePath srcpath = new FilePath(src);
         FilePath dstpath = new FilePath(dst);
-        boolean isUnix = false;
         try {
-            if (Platform.WINDOWS != Platform.current())
-                isUnix = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            // if not write-able, then we can't copy, have to set it to write-able
-            if (isUnix && dstpath.exists()) {
-                int mode = dstpath.mode();
-                // owner write-able bit = 010 000 000b = 0x80
-                if ((mode & 0x80) == 0) {
-                    dstpath.chmod(mode | 0x80);
-                }
-            }
+            changeDestinationPropertiesOnUnixSytem(dstpath, isUnix());
             srcpath.copyToWithPermission(dstpath);
         } catch (InterruptedException e) {
             IOException ioe = new IOException();
             ioe.initCause(e);
             throw ioe;
         }
+    }
+
+    private static void changeDestinationPropertiesOnUnixSytem(FilePath dstpath, boolean isUnix)
+            throws IOException, InterruptedException, PosixException {
+        // if not write-able, then we can't copy, have to set it to write-able
+        if (isUnix && dstpath.exists()) {
+            int mode = dstpath.mode();
+            // owner write-able bit = 010 000 000b = 0x80
+            if ((mode & 0x80) == 0) {
+                dstpath.chmod(mode | 0x80);
+            }
+        }
+    }
+
+    private static boolean isUnix() {
+        boolean isUnix = false;
+        try {
+            isUnix = (Platform.WINDOWS != Platform.current());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return isUnix;
     }
 
     public String getLog() {
