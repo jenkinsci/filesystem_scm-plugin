@@ -42,5 +42,8 @@ want to start with
 [newbie-friendly open tickets](https://issues.jenkins-ci.org/issues/?jql=project%20%3D%20JENKINS%20AND%20status%20in%20%28Open%2C%20Reopened%29%20AND%20component%20%3D%20filesystem_scm-plugin%20AND%20labels%20%3D%20newbie-friendly)
 first (if there are any).
 
+# License
+This Jenkins plugin is licensed under the [MIT License](./LICENSE.txt).
+
 [ButlerImage]: https://jenkins.io/sites/default/files/jenkins_logo.png
 [homepage]: https://plugins.jenkins.io/filesystem_scm
