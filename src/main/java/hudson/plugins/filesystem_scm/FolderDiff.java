@@ -125,7 +125,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
-        IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
+        IOFileFilter dirFilter = getDirFilter();
         AndFileFilter fileFilter = createAntPatternFileFilter();
         Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, fileFilter, dirFilter);
         ArrayList<Entry> list = new ArrayList<Entry>();
@@ -161,10 +161,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     private AndFileFilter createAntPatternFileFilter() {
         AndFileFilter fileFilter = new AndFileFilter();
-        if (ignoreHidden)
-            fileFilter.addFileFilter(HiddenFileFilter.VISIBLE);
-        else
-            fileFilter.addFileFilter(TrueFileFilter.TRUE);
+        fileFilter.addFileFilter(getDirFilter());
         // AgeFileFilter is base on lastModifiedDate, but if you copy a file on Windows,
         // the lastModifiedDate is not changed
         // only the creation date is updated, so we can't use the following
@@ -214,7 +211,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
-        IOFileFilter dirFilter = ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
+        IOFileFilter dirFilter = getDirFilter();
         AndFileFilter fileFilter = createAntPatternFileFilter();
         // this is the full list of all viewable/available source files
         Collection<File> allSources = (Collection<File>) FileUtils.listFiles(src, fileFilter, dirFilter);
@@ -248,6 +245,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             }
         }
         return list;
+    }
+
+    private IOFileFilter getDirFilter() {
+        return ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
     }
 
     protected boolean deleteFile(File file) {
