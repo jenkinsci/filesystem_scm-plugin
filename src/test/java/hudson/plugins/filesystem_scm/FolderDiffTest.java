@@ -86,7 +86,7 @@ public class FolderDiffTest {
     }
 
     @Test
-    public void testNoChanges() {
+    public void getNewOrModifiedFiles_noChanges_EmptyList() {
         FolderDiff diff = getFolderDiff();
         List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
         assertTrue(result.isEmpty());
@@ -95,7 +95,7 @@ public class FolderDiffTest {
     }
 
     @Test
-    public void testModifiedFiles() throws IOException {
+    public void getNewOrModifiedFiles_allModified_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 boolean modified = file.setLastModified(modifiedTime);
@@ -106,31 +106,31 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.MODIFIED));
             }
         });
-        assertNewOrModified(expected);
+        assertMarkAsNewOrModified(expected);
     }
 
     @Test
-    public void testCopiedFiles() throws IOException {
+    public void getNewOrModifiedFiles_allCopied_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 createFileAndAddExpectation(file, expected, true, FolderDiff.Entry.Type.NEW);
             }
         });
-        assertNewOrModified(expected);
+        assertMarkAsNewOrModified(expected);
     }
 
     @Test
-    public void testCreatedFiles() throws IOException {
+    public void getNewOrModifiedFiles_allCreated_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.NEW);
             }
         });
-        assertNewOrModified(expected);
+        assertMarkAsNewOrModified(expected);
     }
 
     @Test
-    public void testDeletedFiles() throws IOException {
+    public void getFiles2Delete_allcopied_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 if (file.delete()) {
@@ -139,11 +139,11 @@ public class FolderDiffTest {
                 }
             }
         });
-        assertDeleted(expected);
+        assertMarkAsDelete(expected);
     }
 
     @Test
-    public void testNewFilesInDst() throws IOException {
+    public void getFiles2Delete_createNewFile_MarkAsDelete() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 // the file is newly created in dst, we shouldn't delete this file
@@ -151,11 +151,11 @@ public class FolderDiffTest {
                 createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.DELETED);
             }
         });
-        assertDeleted(expected);
+        assertMarkAsDelete(expected);
     }
 
     @Test
-    public void testCopiedFilesInDst() throws IOException {
+    public void getFiles2Delete_CopiedFilesInDst_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 // the file is copied in dst, the last modified time should be same as the
@@ -165,11 +165,11 @@ public class FolderDiffTest {
             }
 
         });
-        assertDeleted(expected);
+        assertMarkAsDelete(expected);
     }
 
     @Test
-    public void testCopiedFilesInDstWithAllowDeleteList() throws IOException {
+    public void getFiles2Delete_CopiedFilesInDstWithAllowDeleteList_AllFound() throws IOException {
         Collection<File> list = FileUtils.listFiles(dst, null, true);
         Set<String> allowDeleteList = new HashSet<String>();
         for (File file : list) {
@@ -203,13 +203,13 @@ public class FolderDiffTest {
         expected.add(new FolderDiff.Entry(relativeName, type));
     }
 
-    private void assertNewOrModified(Set<FolderDiff.Entry> expected) {
+    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected) {
         FolderDiff diff = getFolderDiff();
         List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
-    private void assertDeleted(Set<FolderDiff.Entry> expected) {
+    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected) {
         FolderDiff diff = getFolderDiff();
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
