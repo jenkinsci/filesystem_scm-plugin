@@ -188,23 +188,13 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * will be deleted in the destination</li>
      * </ul>
      * 
-     * <p>
-     * Note: the time parameter (1st param) is basically not used in the code. On
-     * Windows, the lastModifiedDate will not be updated when you copy a file to the
-     * source folder, until we have a way to get the "real" lastModifiedDate on
-     * Windows, we won't use this "time" field
-     * </p>
-     * 
-     * @param time
-     *            should be the last build time, to improve performance, we will
-     *            list all files modified after "time" and check with source
      * @param breakOnceFound
      *            to improve performance, we will return once we found the 1st new
      *            or modified file
      * 
      * @return the list of deleted files
      */
-    public List<Entry> getDeletedFiles(long time, boolean breakOnceFound) {
+    public List<Entry> getFiles2Delete(boolean breakOnceFound) {
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
