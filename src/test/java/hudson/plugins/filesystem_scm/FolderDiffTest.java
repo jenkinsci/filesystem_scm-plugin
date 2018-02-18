@@ -16,24 +16,29 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class FolderDiffTest {
 
     File src;
     File dst;
+    @Rule
+    public TemporaryFolder srcFolder = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder dstFolder = new TemporaryFolder();
     long modifiedTime;
     long checkTime;
     final static long diff = 60 * 60 * 2 * 1000L;
 
     @Before
     public void setupSrcAndDst() throws IOException {
-        src = getTempDir();
+        src = srcFolder.getRoot();
         for (int i = 0; i < 50; i++)
             createRandomFile(src);
-        dst = getTempDir();
+        dst = dstFolder.getRoot();
         FileUtils.copyDirectory(src, dst);
 
         checkTime = System.currentTimeMillis() - 60 * 60 * 1000L;
@@ -80,26 +85,6 @@ public class FolderDiffTest {
             return name + "." + ext;
     }
 
-    private static File getTempDir() {
-        for (int i = 0; i < 20; i++) {
-            try {
-                File file = File.createTempFile("fsscm", null);
-                file.delete();
-                file.mkdir();
-                return file;
-            } catch (IOException e) {
-                continue;
-            }
-        }
-        throw new RuntimeException("Can't creat temp directory");
-    }
-
-    @After
-    public void deleteSrcAndDst() throws IOException {
-        FileUtils.forceDelete(src);
-        FileUtils.forceDelete(dst);
-    }
-
     @Test
     public void testNoChanges() {
         FolderDiff diff = getFolderDiff();
@@ -121,9 +106,7 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.MODIFIED));
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertNewOrModified(expected);
     }
 
     @Test
@@ -135,9 +118,7 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertNewOrModified(expected);
     }
 
     @Test
@@ -149,9 +130,7 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertNewOrModified(expected);
     }
 
     @Test
@@ -164,9 +143,7 @@ public class FolderDiffTest {
                 }
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertDeleted(expected);
     }
 
     @Test
@@ -180,9 +157,7 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertDeleted(expected);
     }
 
     @Test
@@ -197,9 +172,7 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
             }
         });
-        FolderDiff diff = getFolderDiff();
-        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
-        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        assertDeleted(expected);
     }
 
     @Test
@@ -221,6 +194,18 @@ public class FolderDiffTest {
         });
         FolderDiff diff = getFolderDiff();
         diff.setAllowDeleteList(allowDeleteList);
+        List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
+        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+    }
+
+    private void assertNewOrModified(Set<FolderDiff.Entry> expected) {
+        FolderDiff diff = getFolderDiff();
+        List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
+        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+    }
+
+    private void assertDeleted(Set<FolderDiff.Entry> expected) {
+        FolderDiff diff = getFolderDiff();
         List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
