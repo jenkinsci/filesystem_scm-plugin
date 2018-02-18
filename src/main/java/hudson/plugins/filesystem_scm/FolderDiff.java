@@ -116,9 +116,6 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param breakOnceFound
      *            to improve performance, we will return once we found the 1st new
      *            or modified file
-     * @param testRun
-     *            if true, will not sync file from source to destination, otherwise,
-     *            will sync files if new or modified files found
      * 
      * @return the list of new or modified files
      */
@@ -204,9 +201,6 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param breakOnceFound
      *            to improve performance, we will return once we found the 1st new
      *            or modified file
-     * @param testRun
-     *            if true, will not sync file from source to destination, otherwise,
-     *            will sync files if deleted files found
      * 
      * @return the list of deleted files
      */
@@ -261,6 +255,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * This function will convert e.stackTrace to String and call log(String)
      * 
      * @param e
+     *            a thrown Exception which shall be logged
      */
     protected void log(Exception e) {
         log(stackTraceToString(e));
@@ -270,7 +265,9 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * This function will convert e.stackTrace to String and call log(String)
      * 
      * @param msg
+     *            some message to be logged
      * @param e
+     *            a thrown Exception which shall be logged too
      */
     protected void log(String msg, Exception e) {
         log(msg + "\n" + stackTraceToString(e));
@@ -280,6 +277,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * Default log to System.out
      * 
      * @param msg
+     *            some message to be logged
      */
     protected void log(String msg) {
         System.out.println(msg);
@@ -289,7 +287,9 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * Convert Exception.stackTrace to String
      * 
      * @param e
-     * @return
+     *            an Exception which shall be converted to string
+     * 
+     * @return the exceptions stacktrace as string
      */
     public static String stackTraceToString(Exception e) {
         StringWriter buf = new StringWriter();
@@ -338,6 +338,8 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param dst
      *            Destination File
      * @throws IOException
+     *             when copying is not successful an ex eption could be thrown by
+     *             the underlying function
      */
     protected void copyFile(File src, File dst) throws IOException {
         FileUtils.copyFile(src, dst);
