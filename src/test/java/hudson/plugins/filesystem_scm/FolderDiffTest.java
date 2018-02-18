@@ -113,9 +113,7 @@ public class FolderDiffTest {
     public void testCopiedFiles() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                File newFile = createNewFile(file, true);
-                String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
-                expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
+                createFileAndAddExpectation(file, expected, true, FolderDiff.Entry.Type.NEW);
             }
         });
         assertNewOrModified(expected);
@@ -125,9 +123,7 @@ public class FolderDiffTest {
     public void testCreatedFiles() throws IOException {
         Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                File newFile = createNewFile(file, false);
-                String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
-                expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
+                createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.NEW);
             }
         });
         assertNewOrModified(expected);
@@ -152,9 +148,7 @@ public class FolderDiffTest {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 // the file is newly created in dst, we shouldn't delete this file
                 // therefore, we don't need to add to expected
-                File newFile = createNewFile(file, false);
-                String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
-                expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
+                createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.DELETED);
             }
         });
         assertDeleted(expected);
@@ -167,10 +161,9 @@ public class FolderDiffTest {
                 // the file is copied in dst, the last modified time should be same as the
                 // original one
                 // we should delete this file
-                File newFile = createNewFile(file, true);
-                String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
-                expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
+                createFileAndAddExpectation(file, expected, true, FolderDiff.Entry.Type.DELETED);
             }
+
         });
         assertDeleted(expected);
     }
@@ -196,6 +189,18 @@ public class FolderDiffTest {
         diff.setAllowDeleteList(allowDeleteList);
         List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+    }
+
+    private void createFileAndAddExpectation(File file, Set<FolderDiff.Entry> expected, boolean copyFile,
+            FolderDiff.Entry.Type type) throws IOException {
+        File newFile = createNewFile(file, copyFile);
+        String relativeName;
+        if (type == FolderDiff.Entry.Type.DELETED) {
+            relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
+        } else {
+            relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
+        }
+        expected.add(new FolderDiff.Entry(relativeName, type));
     }
 
     private void assertNewOrModified(Set<FolderDiff.Entry> expected) {
