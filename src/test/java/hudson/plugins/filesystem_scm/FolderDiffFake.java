@@ -12,9 +12,11 @@ public class FolderDiffFake<T> extends FolderDiff<T> {
     List<ImmutablePair<File, File>> copyFilePairs;
     List<File> deleteFiles;
 
-    public FolderDiffFake() {
+    public FolderDiffFake(String sourcePath, String destinationPath) {
         copyFilePairs = new ArrayList<ImmutablePair<File, File>>();
         deleteFiles = new ArrayList<File>();
+        this.setDstPath(destinationPath);
+        this.setSrcPath(sourcePath);
     }
 
     /**

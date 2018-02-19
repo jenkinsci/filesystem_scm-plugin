@@ -98,7 +98,7 @@ public class FolderDiffTest {
 
     @Test
     public void getNewOrModifiedFiles_allModified_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 boolean modified = file.setLastModified(modifiedTime);
                 if (!modified) {
@@ -113,19 +113,21 @@ public class FolderDiffTest {
 
     @Test
     public void getNewOrModifiedFiles_allCopied_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallableImpl(true, FolderDiff.Entry.Type.NEW));
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(src,
+                new FileCallableImpl(true, FolderDiff.Entry.Type.NEW));
         assertMarkAsNewOrModified(expected);
     }
 
     @Test
     public void getNewOrModifiedFiles_allCreated_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallableImpl(false, FolderDiff.Entry.Type.NEW));
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(src,
+                new FileCallableImpl(false, FolderDiff.Entry.Type.NEW));
         assertMarkAsNewOrModified(expected);
     }
 
     @Test
     public void getFiles2Delete_allcopied_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 if (file.delete()) {
                     String relativeName = FolderDiff.getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
@@ -136,15 +138,22 @@ public class FolderDiffTest {
         assertMarkAsDelete(expected);
     }
 
+    // the file is newly created in dst, we shouldn't delete this file
+    // therefore, we don't need to add to expected
     @Test
     public void getFiles2Delete_createNewFile_MarkAsDelete() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallableImpl(false, FolderDiff.Entry.Type.DELETED));
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(dst,
+                new FileCallableImpl(false, FolderDiff.Entry.Type.DELETED));
         assertMarkAsDelete(expected);
     }
 
+    // the file is copied in dst, the last modified time should be same as the
+    // original one
+    // we should delete this file
     @Test
     public void getFiles2Delete_CopiedFilesInDst_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallableImpl(true, FolderDiff.Entry.Type.DELETED));
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(dst,
+                new FileCallableImpl(true, FolderDiff.Entry.Type.DELETED));
         assertMarkAsDelete(expected);
     }
 
@@ -157,7 +166,7 @@ public class FolderDiffTest {
             allowDeleteList.add(relativePath);
         }
 
-        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
+        Set<FolderDiff.Entry> expected = createFilesAndExpectations(dst, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 // the file is copied in dst, the last modified time should be same as the
                 // original one
@@ -211,13 +220,10 @@ public class FolderDiffTest {
     }
 
     private FolderDiff getFolderDiff() {
-        FolderDiff folderDiff = new FolderDiffFake();
-        folderDiff.setSrcPath(src.getAbsolutePath());
-        folderDiff.setDstPath(dst.getAbsolutePath());
-        return folderDiff;
+        return new FolderDiffFake(src.getAbsolutePath(), dst.getAbsolutePath());
     }
 
-    private Set<FolderDiff.Entry> processFiles(File folder, FileCallable call) throws IOException {
+    private Set<FolderDiff.Entry> createFilesAndExpectations(File folder, FileCallable call) throws IOException {
         ArrayList<File> files = new ArrayList<File>(FileUtils.listFiles(folder, null, true));
         Collections.shuffle(files);
         Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
