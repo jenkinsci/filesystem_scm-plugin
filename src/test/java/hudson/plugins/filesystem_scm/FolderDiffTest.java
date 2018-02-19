@@ -21,6 +21,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import hudson.plugins.filesystem_scm.FolderDiff.Entry;
+
 public class FolderDiffTest {
 
     File src;
@@ -111,21 +113,13 @@ public class FolderDiffTest {
 
     @Test
     public void getNewOrModifiedFiles_allCopied_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-            public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                createFileAndAddExpectation(file, expected, true, FolderDiff.Entry.Type.NEW);
-            }
-        });
+        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallableImpl(true, FolderDiff.Entry.Type.NEW));
         assertMarkAsNewOrModified(expected);
     }
 
     @Test
     public void getNewOrModifiedFiles_allCreated_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-            public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.NEW);
-            }
-        });
+        Set<FolderDiff.Entry> expected = processFiles(src, new FileCallableImpl(false, FolderDiff.Entry.Type.NEW));
         assertMarkAsNewOrModified(expected);
     }
 
@@ -144,27 +138,13 @@ public class FolderDiffTest {
 
     @Test
     public void getFiles2Delete_createNewFile_MarkAsDelete() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
-            public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                // the file is newly created in dst, we shouldn't delete this file
-                // therefore, we don't need to add to expected
-                createFileAndAddExpectation(file, expected, false, FolderDiff.Entry.Type.DELETED);
-            }
-        });
+        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallableImpl(false, FolderDiff.Entry.Type.DELETED));
         assertMarkAsDelete(expected);
     }
 
     @Test
     public void getFiles2Delete_CopiedFilesInDst_AllFound() throws IOException {
-        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
-            public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-                // the file is copied in dst, the last modified time should be same as the
-                // original one
-                // we should delete this file
-                createFileAndAddExpectation(file, expected, true, FolderDiff.Entry.Type.DELETED);
-            }
-
-        });
+        Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallableImpl(true, FolderDiff.Entry.Type.DELETED));
         assertMarkAsDelete(expected);
     }
 
@@ -189,18 +169,6 @@ public class FolderDiffTest {
         diff.setAllowDeleteList(allowDeleteList);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
-    }
-
-    private void createFileAndAddExpectation(File file, Set<FolderDiff.Entry> expected, boolean copyFile,
-            FolderDiff.Entry.Type type) throws IOException {
-        File newFile = createNewFile(file, copyFile);
-        String relativeName;
-        if (type == FolderDiff.Entry.Type.DELETED) {
-            relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
-        } else {
-            relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
-        }
-        expected.add(new FolderDiff.Entry(relativeName, type));
     }
 
     private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected) {
@@ -261,6 +229,29 @@ public class FolderDiffTest {
     }
 
     private interface FileCallable {
-        public void process(File file, Set<FolderDiff.Entry> result) throws IOException;
+        public void process(File file, Set<FolderDiff.Entry> expected) throws IOException;
+    }
+
+    private class FileCallableImpl implements FileCallable {
+
+        boolean copyFile;
+        FolderDiff.Entry.Type type;
+
+        public FileCallableImpl(boolean copyFile, FolderDiff.Entry.Type type) {
+            this.copyFile = copyFile;
+            this.type = type;
+        }
+
+        @Override
+        public void process(File file, Set<Entry> expected) throws IOException {
+            File newFile = createNewFile(file, copyFile);
+            String relativeName;
+            if (type == FolderDiff.Entry.Type.DELETED) {
+                relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
+            } else {
+                relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
+            }
+            expected.add(new FolderDiff.Entry(relativeName, type));
+        }
     }
 }
