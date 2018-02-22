@@ -304,8 +304,12 @@ public class FolderDiffTest {
     }
 
     @Test
-    public void getFiles2Delete_aSourceFileDeleted_markOneSourceFileForDeletion() {
-
-        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src1, dst1);
+    public void getFiles2Delete_aSourceFolderDeleted_markAllFilesForDeletion() throws IOException {
+        FileUtils.deleteDirectory(src1);
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.DELETED));
+        expected.add(new Entry(rootFilePath, FolderDiff.Entry.Type.DELETED));
+        expected.add(new Entry(subfolderFilePath, FolderDiff.Entry.Type.DELETED));
+        assertMarkAsDelete(expected, src1, dst1);
     }
 }

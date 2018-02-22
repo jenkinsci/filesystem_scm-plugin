@@ -201,7 +201,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         IOFileFilter dirFilter = getDirFilter();
         AndFileFilter fileFilter = createAntPatternFileFilter();
         // this is the full list of all viewable/available source files
-        Collection<File> allSources = (Collection<File>) FileUtils.listFiles(src, fileFilter, dirFilter);
+        Collection<File> allSources = new ArrayList<>();
+        if (src.isDirectory()) {
+            allSources = (Collection<File>) FileUtils.listFiles(src, fileFilter, dirFilter);
+        }
 
         ArrayList<Entry> list = new ArrayList<Entry>();
         if (dst.isDirectory()) {
