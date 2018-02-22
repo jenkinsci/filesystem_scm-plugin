@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,15 +26,20 @@ import hudson.plugins.filesystem_scm.FolderDiff.Entry;
 
 public class FolderDiffTest {
 
-    File src;
-    File dst;
+    File src, src1;
+    File dst, dst1;
     @Rule
     public TemporaryFolder srcFolder = new TemporaryFolder();
     @Rule
     public TemporaryFolder dstFolder = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder srcFolder1 = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder dstFolder1 = new TemporaryFolder();
     long modifiedTime;
     long checkTime;
     final static long diff = 60 * 60 * 2 * 1000L;
+    String rootFilePath, subfolderFilePath, folderFilePath;
 
     @Before
     public void setupSrcAndDst() throws IOException {
@@ -45,6 +51,30 @@ public class FolderDiffTest {
 
         checkTime = System.currentTimeMillis() - 60 * 60 * 1000L;
         modifiedTime = System.currentTimeMillis() - diff;
+
+        // setup src Folder
+        src1 = srcFolder1.getRoot();
+        src1.createNewFile();
+        subfolderFilePath = createFile(src1, "Folder", "subFolder", "subFolderFile.txt");
+        folderFilePath = createFile(src1, "Folder", "FolderFile.git");
+        rootFilePath = createFile(src1, "RootFile.java");
+
+        // setup destination Folder
+        dst1 = dstFolder1.getRoot();
+        dst1.createNewFile();
+        createFile(dst1, subfolderFilePath);
+        createFile(dst1, folderFilePath);
+        createFile(dst1, rootFilePath);
+
+    }
+
+    private String createFile(File root, String... strings) throws IOException {
+        String path = TestUtils.createPlatformDependendPath(strings);
+        File file = new File(root, path);
+        System.out.println(file.getAbsolutePath());
+        FileUtils.touch(file);
+        Assert.assertTrue(file.exists());
+        return path;
     }
 
     private static File createRandomFile(File dir) {
@@ -55,6 +85,7 @@ public class FolderDiffTest {
                 try {
                     FileUtils.touch(tmp);
                     tmp.setLastModified(System.currentTimeMillis() - 2 * diff);
+                    System.out.println(tmp.getAbsolutePath());
                     return tmp;
                 } catch (IOException e) {
                     continue;
@@ -89,7 +120,7 @@ public class FolderDiffTest {
 
     @Test
     public void getNewOrModifiedFiles_noChanges_EmptyList() {
-        FolderDiff diff = getFolderDiff();
+        FolderDiff diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
         assertTrue(result.isEmpty());
         ChangelogSet changelogSet = new ChangelogSet(null, result);
@@ -97,7 +128,7 @@ public class FolderDiffTest {
     }
 
     @Test
-    public void getNewOrModifiedFiles_allModified_AllFound() throws IOException {
+    public void getNewOrModifiedFiles_someModified_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = createFilesAndExpectations(src, new FileCallable() {
             public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
                 boolean modified = file.setLastModified(modifiedTime);
@@ -108,21 +139,21 @@ public class FolderDiffTest {
                 expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.MODIFIED));
             }
         });
-        assertMarkAsNewOrModified(expected);
+        assertMarkAsNewOrModified(expected, src, dst);
     }
 
     @Test
     public void getNewOrModifiedFiles_allCopied_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = createFilesAndExpectations(src,
                 new FileCallableImpl(true, FolderDiff.Entry.Type.NEW));
-        assertMarkAsNewOrModified(expected);
+        assertMarkAsNewOrModified(expected, src, dst);
     }
 
     @Test
     public void getNewOrModifiedFiles_allCreated_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = createFilesAndExpectations(src,
                 new FileCallableImpl(false, FolderDiff.Entry.Type.NEW));
-        assertMarkAsNewOrModified(expected);
+        assertMarkAsNewOrModified(expected, src, dst);
     }
 
     @Test
@@ -135,7 +166,7 @@ public class FolderDiffTest {
                 }
             }
         });
-        assertMarkAsDelete(expected);
+        assertMarkAsDelete(expected, src, dst);
     }
 
     // the file is newly created in dst, we shouldn't delete this file
@@ -144,7 +175,7 @@ public class FolderDiffTest {
     public void getFiles2Delete_createNewFile_MarkAsDelete() throws IOException {
         Set<FolderDiff.Entry> expected = createFilesAndExpectations(dst,
                 new FileCallableImpl(false, FolderDiff.Entry.Type.DELETED));
-        assertMarkAsDelete(expected);
+        assertMarkAsDelete(expected, src, dst);
     }
 
     // the file is copied in dst, the last modified time should be same as the
@@ -154,7 +185,7 @@ public class FolderDiffTest {
     public void getFiles2Delete_CopiedFilesInDst_AllFound() throws IOException {
         Set<FolderDiff.Entry> expected = createFilesAndExpectations(dst,
                 new FileCallableImpl(true, FolderDiff.Entry.Type.DELETED));
-        assertMarkAsDelete(expected);
+        assertMarkAsDelete(expected, src, dst);
     }
 
     @Test
@@ -174,20 +205,20 @@ public class FolderDiffTest {
                 File newFile = createNewFile(file, true);
             }
         });
-        FolderDiff diff = getFolderDiff();
+        FolderDiff diff = getFolderDiff(src, dst);
         diff.setAllowDeleteList(allowDeleteList);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
-    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected) {
-        FolderDiff diff = getFolderDiff();
+    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, File src, File dst) {
+        FolderDiff diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
 
-    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected) {
-        FolderDiff diff = getFolderDiff();
+    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst) {
+        FolderDiff diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
     }
@@ -219,7 +250,7 @@ public class FolderDiffTest {
         }
     }
 
-    private FolderDiff getFolderDiff() {
+    private FolderDiff getFolderDiff(File src, File dst) {
         return new FolderDiffFake(src.getAbsolutePath(), dst.getAbsolutePath());
     }
 
@@ -259,5 +290,22 @@ public class FolderDiffTest {
             }
             expected.add(new FolderDiff.Entry(relativeName, type));
         }
+    }
+
+    @Test
+    public void getFiles2Delete_noRemovedSrcFiles_nothing2Delete() throws IOException {
+        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src1, dst1);
+    }
+
+    @Test
+    public void getFiles2Delete_allDestinationFolderDeleted_nothing2Delete() throws IOException {
+        FileUtils.deleteDirectory(dst1);
+        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src1, dst1);
+    }
+
+    @Test
+    public void getFiles2Delete_aSourceFileDeleted_markOneSourceFileForDeletion() {
+
+        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src1, dst1);
     }
 }
