@@ -203,31 +203,33 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         // this is the full list of all viewable/available source files
         Collection<File> allSources = (Collection<File>) FileUtils.listFiles(src, fileFilter, dirFilter);
 
-        // now get the list of all sources in workspace (destination)
-        Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(dst, TrueFileFilter.TRUE, TrueFileFilter.TRUE);
-
         ArrayList<Entry> list = new ArrayList<Entry>();
-        while (it.hasNext()) {
-            File file = it.next();
-            try {
-                String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
-                File tmp = new File(src, relativeName);
-                if (!allSources.contains(tmp) && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
-                    addAndLog(list, relativeName, Type.DELETED);
-                    if (breakOnceFound) {
-                        return list;
-                    }
-                    try {
-                        boolean deleted = deleteFile(file);
-                        if (!deleted) {
-                            log("file.delete() failed: " + file.getAbsolutePath());
+        if (dst.isDirectory()) {
+            // now get the list of all sources in workspace (destination)
+            Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(dst, TrueFileFilter.TRUE, TrueFileFilter.TRUE);
+            while (it.hasNext()) {
+                File file = it.next();
+                try {
+                    String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
+                    File tmp = new File(src, relativeName);
+                    if (!allSources.contains(tmp)
+                            && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
+                        addAndLog(list, relativeName, Type.DELETED);
+                        if (breakOnceFound) {
+                            return list;
                         }
-                    } catch (SecurityException e) {
-                        log("Can't delete " + file.getAbsolutePath(), e);
+                        try {
+                            boolean deleted = deleteFile(file);
+                            if (!deleted) {
+                                log("file.delete() failed: " + file.getAbsolutePath());
+                            }
+                        } catch (SecurityException e) {
+                            log("Can't delete " + file.getAbsolutePath(), e);
+                        }
                     }
+                } catch (IOException e) {
+                    log(e);
                 }
-            } catch (IOException e) {
-                log(e);
             }
         }
         return list;
