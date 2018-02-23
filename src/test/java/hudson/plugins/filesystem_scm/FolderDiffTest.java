@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -213,19 +212,17 @@ public class FolderDiffTest {
     }
 
     private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, long time, File src, File dst) {
-        FolderDiff diff = getFolderDiff(src, dst);
+        FolderDiffFake diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(time, false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        Assert.assertEquals(expected.size(), diff.copyFilePairs.size());
     }
 
     private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst) throws InterruptedException {
-        FolderDiff diff = getFolderDiff(src, dst);
+        FolderDiffFake diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
-        TimeUnit.SECONDS.sleep(1);
-        for (Entry entry : expected) {
-            Assert.assertFalse((new File(dst, entry.getFilename())).exists());
-        }
+        Assert.assertEquals(expected.size(), diff.deleteFiles.size());
     }
 
     private File createNewFile(File srcFile, boolean copyFile) throws IOException {
@@ -255,7 +252,7 @@ public class FolderDiffTest {
         }
     }
 
-    private FolderDiff getFolderDiff(File src, File dst) {
+    private FolderDiffFake getFolderDiff(File src, File dst) {
         return new FolderDiffFake(src.getAbsolutePath(), dst.getAbsolutePath());
     }
 
