@@ -123,32 +123,34 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
-        IOFileFilter dirFilter = getDirFilter();
-        AndFileFilter fileFilter = createAntPatternFileFilter();
-        Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, fileFilter, dirFilter);
         ArrayList<Entry> list = new ArrayList<Entry>();
-        while (it.hasNext()) {
-            File file = it.next();
-            try {
-                String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
-                // need to change dst to see if there is such a file
-                File tmp = new File(dst, relativeName);
-                boolean newOrModified = true;
-                if (!tmp.exists()) {// new
-                    addAndLog(list, relativeName, Entry.Type.NEW);
-                } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
-                    addAndLog(list, relativeName, Entry.Type.MODIFIED);
-                } else {
-                    newOrModified = false;
-                }
-                if (newOrModified) {
-                    if (breakOnceFound) {
-                        return list;
+        if (src.isDirectory()) {
+            IOFileFilter dirFilter = getDirFilter();
+            AndFileFilter fileFilter = createAntPatternFileFilter();
+            Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, fileFilter, dirFilter);
+            while (it.hasNext()) {
+                File file = it.next();
+                try {
+                    String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
+                    // need to change dst to see if there is such a file
+                    File tmp = new File(dst, relativeName);
+                    boolean newOrModified = true;
+                    if (!tmp.exists()) {// new
+                        addAndLog(list, relativeName, Entry.Type.NEW);
+                    } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
+                        addAndLog(list, relativeName, Entry.Type.MODIFIED);
+                    } else {
+                        newOrModified = false;
                     }
-                    copyFile(file, tmp);
+                    if (newOrModified) {
+                        if (breakOnceFound) {
+                            return list;
+                        }
+                        copyFile(file, tmp);
+                    }
+                } catch (IOException e) {
+                    log(e);
                 }
-            } catch (IOException e) {
-                log(e);
             }
         }
         return list;
