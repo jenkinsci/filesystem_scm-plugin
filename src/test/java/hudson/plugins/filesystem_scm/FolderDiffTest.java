@@ -4,11 +4,15 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -124,23 +128,40 @@ public class FolderDiffTest {
 
     @Test
     public void getFilesNewOrModified_NewHiddenFileAndActOnHiddenFiles_HiddenFileIdentifiedAsNew() throws IOException {
-        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        // setup
         String hiddenFilePath = createFile(src, "Folder", "subFolder", "._HiddenFile");
-        Assert.assertTrue((new File(src, hiddenFilePath)).isHidden());
+        hideFile(hiddenFilePath);
+
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
         expected.add(new Entry(hiddenFilePath, FolderDiff.Entry.Type.NEW));
+        // execute
         FolderDiffFake diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> actualResult = diff.getNewOrModifiedFiles(currentTestExecutionTime + ONE_MINUTE, false);
+        // check
         assertMarkAsNewOrModified(expected, actualResult, diff);
     }
 
     @Test
     public void getFilesNewOrModified_NewHiddenFileButIgnoreHidden_NoNewFile() throws IOException {
-        String hiddenFilePath = createFile(src, "Folder", "subFolder", "._HiddenFile");
-        Assert.assertTrue((new File(src, hiddenFilePath)).isHidden());
+        // setup
+        String hiddenFilePathString = createFile(src, "Folder", "subFolder", "._HiddenFile");
+        hideFile(hiddenFilePathString);
+        // execute
         FolderDiffFake diff = getFolderDiff(src, dst);
         diff.setIgnoreHidden(true);
         List<FolderDiff.Entry> actualResult = diff.getNewOrModifiedFiles(currentTestExecutionTime + ONE_MINUTE, false);
+        // check
         assertMarkAsNewOrModified(new HashSet<FolderDiff.Entry>(), actualResult, diff);
+    }
+
+    private void hideFile(String hiddenFilePathString) throws IOException {
+        File hiddenFile = new File(src, hiddenFilePathString);
+        // Windows specific code
+        if (SystemUtils.IS_OS_WINDOWS) {
+            Path hiddenFilePath = Paths.get(hiddenFile.getAbsolutePath());
+            Files.setAttribute(hiddenFilePath, "dos:hidden", true);
+        }
+        Assert.assertTrue(hiddenFile.isHidden());
     }
 
     private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, List<FolderDiff.Entry> actual,
