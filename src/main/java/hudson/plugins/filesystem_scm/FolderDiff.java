@@ -89,11 +89,19 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         this.allowDeleteList = allowDeleteList;
     }
 
-    /*
-     * public boolean isModifiedSince(long time) { //if (
-     * hasNewOrModifiedFiles(time) ) return true; //else if ( hasDeletedFiles(time)
-     * ) return true; //else return false; return true; }
+    /**
+     * 
+     * @param time
+     * @param breakOnceFound
+     * @param testRun
+     * @return
+     * @deprecated use the method without testrun, if you just want to have some
+     *             test mode, inherit this class and overwrite the copy method
      */
+    @Deprecated
+    public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound, boolean testRun) {
+        return getNewOrModifiedFiles(time, breakOnceFound);
+    }
 
     /**
      * <p>
@@ -183,6 +191,21 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     }
 
     /**
+     * 
+     * @param time
+     * @param breakOnceFound
+     * @param testRun
+     * @return
+     * @deprecated use getFiles2Delete instead, time never has been used anyway and
+     *             testrun is no longer supported, instead inherit from this class
+     *             and overwrite deleteFiles() for the testmode feature
+     */
+    @Deprecated
+    public List<Entry> getDeletedFiles(long time, boolean breakOnceFound, boolean testRun) {
+        return getFiles2Delete(breakOnceFound);
+    }
+
+    /**
      * <p>
      * For each file in the destination folder
      * <ul>
@@ -244,6 +267,13 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         return ignoreHidden ? HiddenFileFilter.VISIBLE : TrueFileFilter.TRUE;
     }
 
+    /**
+     * should delete the given file
+     * 
+     * @param file
+     *            the file to delete
+     * @return true if successful
+     */
     protected boolean deleteFile(File file) {
         return file.delete();
     }
@@ -335,8 +365,8 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param dst
      *            Destination File
      * @throws IOException
-     *             when copying is not successful an ex eption could be thrown by
-     *             the underlying function
+     *             when copying is not successful an exeption could be thrown by the
+     *             underlying function
      */
     protected void copyFile(File src, File dst) throws IOException {
         FileUtils.copyFile(src, dst);
