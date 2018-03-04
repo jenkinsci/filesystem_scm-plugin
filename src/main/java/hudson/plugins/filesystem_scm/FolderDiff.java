@@ -144,9 +144,9 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                     File tmp = new File(dst, relativeName);
                     boolean newOrModified = true;
                     if (!tmp.exists()) {// new
-                        addAndLog(list, relativeName, Entry.Type.NEW);
+                        list.add(createAndLogg(relativeName, Entry.Type.NEW));
                     } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
-                        addAndLog(list, relativeName, Entry.Type.MODIFIED);
+                        list.add(createAndLogg(relativeName, Entry.Type.MODIFIED));
                     } else {
                         newOrModified = false;
                     }
@@ -164,9 +164,9 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         return list;
     }
 
-    private void addAndLog(ArrayList<Entry> list, String relativeName, Type type) {
-        list.add(new Entry(relativeName, type));
+    private Entry createAndLogg(String relativeName, Type type) {
         log(type.name() + " file: " + relativeName);
+        return new Entry(relativeName, type);
     }
 
     private AndFileFilter createAntPatternFileFilter() {
@@ -242,7 +242,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                     File tmp = new File(src, relativeName);
                     if (!allSources.contains(tmp)
                             && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
-                        addAndLog(list, relativeName, Type.DELETED);
+                        list.add(createAndLogg(relativeName, Entry.Type.DELETED));
                         if (breakOnceFound) {
                             return list;
                         }
