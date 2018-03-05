@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -92,15 +95,26 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     /**
      * 
      * @param time
+     *            should be the last build time, to improve performance, we will
+     *            list all files modified after "time" and check with destination
      * @param breakOnceFound
+     *            to improve performance, we will return once we found the 1st new
+     *            or modified file
      * @param testRun
-     * @return
+     *            is ignored
+     * @return the list of new or modified files
      * @deprecated use the method without testrun, if you just want to have some
      *             test mode, inherit this class and overwrite the copy method
      */
     @Deprecated
     public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound, boolean testRun) {
-        return getNewOrModifiedFiles(time, breakOnceFound);
+        List<Entry> entries = new ArrayList();
+        try {
+            entries = getNewOrModifiedFiles(time, breakOnceFound);
+        } catch (IOException e) {
+            log(e);
+        }
+        return entries;
     }
 
     /**
@@ -127,39 +141,36 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * 
      * @return the list of new or modified files
      */
-    public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound) {
+    public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound) throws IOException {
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
         ArrayList<Entry> list = new ArrayList<Entry>();
         if (src.isDirectory()) {
-            IOFileFilter dirFilter = getDirFilter();
-            AndFileFilter fileFilter = createAntPatternFileFilter();
-            Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, fileFilter, dirFilter);
+            Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, createAntPatternFileFilter(),
+                    getDirFilter());
             while (it.hasNext()) {
                 File file = it.next();
-                try {
-                    String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
-                    // need to change dst to see if there is such a file
-                    File tmp = new File(dst, relativeName);
-                    boolean newOrModified = true;
-                    if (!tmp.exists()) {// new
-                        list.add(createAndLogg(relativeName, Entry.Type.NEW));
-                    } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
-                        list.add(createAndLogg(relativeName, Entry.Type.MODIFIED));
-                    } else {
-                        newOrModified = false;
+                String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
+                // need to change dst to see if there is such a file
+                File tmp = new File(dst, relativeName);
+                boolean newOrModified = true;
+                if (!tmp.exists()) {// new
+                    list.add(createAndLogg(relativeName, Entry.Type.NEW));
+                } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
+                    list.add(createAndLogg(relativeName, Entry.Type.MODIFIED));
+                } else {
+                    newOrModified = false;
+                }
+                if (newOrModified) {
+                    if (breakOnceFound) {
+                        return list;
                     }
-                    if (newOrModified) {
-                        if (breakOnceFound) {
-                            return list;
-                        }
-                        copyFile(file, tmp);
-                    }
-                } catch (IOException e) {
-                    log(e);
+                    copyFile(file, tmp);
                 }
             }
+        } else {
+            throw new IOException(String.format("Source Directory not found! (%s)", src.getAbsolutePath()));
         }
         return list;
     }
@@ -193,8 +204,12 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     /**
      * 
      * @param time
+     *            not used
      * @param breakOnceFound
+     *            to improve performance, we will return once we found the 1st new
+     *            or modified file
      * @param testRun
+     *            not used
      * @return
      * @deprecated use getFiles2Delete instead, time never has been used anyway and
      *             testrun is no longer supported, instead inherit from this class
@@ -202,7 +217,13 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      */
     @Deprecated
     public List<Entry> getDeletedFiles(long time, boolean breakOnceFound, boolean testRun) {
-        return getFiles2Delete(breakOnceFound);
+        List<Entry> entries = new ArrayList();
+        try {
+            entries = getFiles2Delete(breakOnceFound);
+        } catch (IOException e) {
+            log(e);
+        }
+        return entries;
     }
 
     /**
@@ -219,7 +240,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * 
      * @return the list of deleted files
      */
-    public List<Entry> getFiles2Delete(boolean breakOnceFound) {
+    public List<Entry> getFiles2Delete(boolean breakOnceFound) throws IOException {
         File src = new File(srcPath);
         File dst = new File(dstPath);
 
@@ -237,26 +258,21 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(dst, TrueFileFilter.TRUE, TrueFileFilter.TRUE);
             while (it.hasNext()) {
                 File file = it.next();
-                try {
-                    String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
-                    File tmp = new File(src, relativeName);
-                    if (!allSources.contains(tmp)
-                            && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
-                        list.add(createAndLogg(relativeName, Entry.Type.DELETED));
-                        if (breakOnceFound) {
-                            return list;
-                        }
-                        try {
-                            boolean deleted = deleteFile(file);
-                            if (!deleted) {
-                                log("file.delete() failed: " + file.getAbsolutePath());
-                            }
-                        } catch (SecurityException e) {
-                            log("Can't delete " + file.getAbsolutePath(), e);
-                        }
+                String relativeName = getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
+                File tmp = new File(src, relativeName);
+                if (!allSources.contains(tmp) && (null == allowDeleteList || allowDeleteList.contains(relativeName))) {
+                    list.add(createAndLogg(relativeName, Type.DELETED));
+                    if (breakOnceFound) {
+                        return list;
                     }
-                } catch (IOException e) {
-                    log(e);
+                    try {
+                        boolean deleted = deleteFile(file);
+                        if (!deleted) {
+                            log("file.delete() failed: " + file.getAbsolutePath());
+                        }
+                    } catch (SecurityException e) {
+                        log("Can't delete " + file.getAbsolutePath(), e);
+                    }
                 }
             }
         }
@@ -273,9 +289,11 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param file
      *            the file to delete
      * @return true if successful
+     * @throws IOException
      */
-    protected boolean deleteFile(File file) {
-        return file.delete();
+    protected boolean deleteFile(File file) throws IOException {
+        Path path = Paths.get(file.getAbsolutePath());
+        return Files.deleteIfExists(path);
     }
 
     /**
@@ -365,12 +383,12 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * @param dst
      *            Destination File
      * @throws IOException
-     *             when copying is not successful an exeption could be thrown by the
-     *             underlying function
+     *             when copying is not successful an exception could be thrown by
+     *             the underlying function
      */
     protected void copyFile(File src, File dst) throws IOException {
         FileUtils.copyFile(src, dst);
-        // adjust file permissions here maybe
+        // TODO: adjust file permissions here maybe
     }
 
     @Override

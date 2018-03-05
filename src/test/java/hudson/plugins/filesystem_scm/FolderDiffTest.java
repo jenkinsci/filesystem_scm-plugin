@@ -97,8 +97,8 @@ public class FolderDiffTest {
         assertMarkAsNewOrModified(expected, 0l, src, dst);
     }
 
-    @Test
-    public void getFilesNewOrModifiedFiles_SourceFolderDeleted_noNewFiles() throws IOException {
+    @Test(expected = IOException.class)
+    public void getFilesNewOrModifiedFiles_SourceFolderDeleted_ExceptionThrown() throws IOException {
         FileUtils.deleteDirectory(src);
         assertMarkAsNewOrModified(new HashSet<FolderDiff.Entry>(), 0l, src, dst);
     }
@@ -170,13 +170,15 @@ public class FolderDiffTest {
         Assert.assertEquals(expected.size(), diff.copyFilePairs.size());
     }
 
-    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, long lastBuildTime, File src, File dst) {
+    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, long lastBuildTime, File src, File dst)
+            throws IOException {
         FolderDiffFake diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> actuaResult = diff.getNewOrModifiedFiles(lastBuildTime, false);
         assertMarkAsNewOrModified(expected, actuaResult, diff);
     }
 
-    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst) throws InterruptedException {
+    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst)
+            throws InterruptedException, IOException {
         FolderDiffFake diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<FolderDiff.Entry>(result));

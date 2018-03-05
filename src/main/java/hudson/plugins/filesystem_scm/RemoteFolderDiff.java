@@ -89,10 +89,12 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
         public Boolean invoke(File workspace, VirtualChannel channel) throws IOException {
             setDstPath(workspace.getAbsolutePath());
             List<FolderDiff.Entry> newFiles = getNewOrModifiedFiles(lastBuildTime, true);
-            if (newFiles.size() > 0)
+            if (newFiles.size() > 0) {
                 return Boolean.TRUE;
-            if (-1 == lastSuccessfulBuildTime)
+            }
+            if (-1 == lastSuccessfulBuildTime) {
                 return Boolean.FALSE;
+            }
             List<FolderDiff.Entry> delFiles = getFiles2Delete(true);
             return delFiles.size() > 0;
         }
