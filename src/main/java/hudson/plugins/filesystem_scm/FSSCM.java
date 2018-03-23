@@ -125,6 +125,7 @@ public class FSSCM extends SCM {
     }
 
     /**
+     * @return an array of wildcards, or null
      * @deprecated Use {@link #getFilterSettings()}.
      */
     @CheckForNull
@@ -353,6 +354,10 @@ public class FSSCM extends SCM {
         }
 
         /**
+         * @param value
+         *            a wildcard pattern
+         * @return a Formvalidation result, telling you whether the value is correct or
+         *         not
          * @deprecated Use
          *             {@link FilterSelector.DescriptorImpl#doCheckWildcard(java.lang.String)}
          */

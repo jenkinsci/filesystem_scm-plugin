@@ -140,6 +140,8 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      *            or modified file
      * 
      * @return the list of new or modified files
+     * @throws IOException
+     *             when source directory is not found or copying is not successful
      */
     public List<Entry> getNewOrModifiedFiles(long time, boolean breakOnceFound) throws IOException {
         File src = new File(srcPath);
@@ -210,7 +212,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      *            or modified file
      * @param testRun
      *            not used
-     * @return
+     * @return the list of deleted files
      * @deprecated use getFiles2Delete instead, time never has been used anyway and
      *             testrun is no longer supported, instead inherit from this class
      *             and overwrite deleteFiles() for the testmode feature
@@ -239,6 +241,8 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      *            or modified file
      * 
      * @return the list of deleted files
+     * @throws IOException
+     *             if IO error occurs when deleting a file
      */
     public List<Entry> getFiles2Delete(boolean breakOnceFound) throws IOException {
         File src = new File(srcPath);
@@ -290,6 +294,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      *            the file to delete
      * @return true if successful
      * @throws IOException
+     *             if an IOError occurs
      */
     protected boolean deleteFile(File file) throws IOException {
         Path path = Paths.get(file.getAbsolutePath());
