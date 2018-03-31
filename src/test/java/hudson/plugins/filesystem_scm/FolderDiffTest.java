@@ -1,257 +1,192 @@
 package hudson.plugins.filesystem_scm;
 
-import static org.junit.Assert.*;
-import org.junit.*;
-import java.io.*;
-import java.util.*;
+import static org.junit.Assert.assertEquals;
 
-import org.apache.commons.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import hudson.plugins.filesystem_scm.FolderDiff.Entry;
 
 public class FolderDiffTest {
 
-	File src;
-	File dst;
-	long modifiedTime;
-	long checkTime;
-	final static long diff = 60*60*2*1000L;
-	
-	@Before
-	public void setupSrcAndDst() throws IOException {
-		src = getTempDir();
-		for(int i=0; i<50; i++) createRandomFile(src);
-		dst = getTempDir();
-		FileUtils.copyDirectory(src, dst);
-		
-		checkTime = System.currentTimeMillis() - 60*60*1000L;
-		modifiedTime = System.currentTimeMillis() - diff;
-	}
-	
-	private static File createRandomFile(File dir) {
-		while(true) {
-			String name = getRandomName();
-			File tmp = new File(dir, name);
-			if ( !tmp.exists() ) {
-				try {
-					FileUtils.touch(tmp);
-					tmp.setLastModified(System.currentTimeMillis()-2*diff);
-					return tmp;
-				} catch ( IOException e ) {
-					continue;
-				}
-			}
-		}
-	}
-	
-	private static String getRandomName() {
-		String[] names = { "Apple", "Banana", "Cherry", "Durian", "Eggfruit", 
-		           "Figs", "Grapes", "Honeydew", "Melon", "Jujube", 
-		           "Kiwi", "Lemon", "Mango", "Nectarine", "Orange", 
-		           "Pineapple", "Raisins", "Strawberries", "Tangerine", 
-		           "Watermelon" };
-		String[] exts = {"cpp", "jsp", "java", "tmp", "$$$", "txt", "xml", "exe", "dll", "", "html", "css", "js"};
-		
-		StringBuffer buf = new StringBuffer();
-		buf.append(names[new Random().nextInt(names.length)]);
-		int count = new Random().nextInt(4);
-		for(int i=0; i<count; i++) {
-			if ( new Random().nextInt(3) == 0 ) buf.append("/");
-			buf.append(names[new Random().nextInt(names.length)]);
-		}
-		String name = buf.toString();
-		
-		String ext = exts[new Random().nextInt(exts.length)];
-		
-		if ( 0 == ext.length() ) return name;
-		else return name + "." + ext;
-	}
-	
-	private static File getTempDir() {
-		for(int i=0; i<20; i++) {
-			try {
-				File file = File.createTempFile("fsscm", null);
-				file.delete();
-				file.mkdir();
-				return file;
-			} catch ( IOException e ) {
-				continue;
-			}
-		}
-		throw new RuntimeException("Can't creat temp directory");
-	}
-		
-	@After
-	public void deleteSrcAndDst() throws IOException {
-		FileUtils.forceDelete(src);
-		FileUtils.forceDelete(dst);
-	}
-	
-	@Test
-	public void testNoChanges() {
-	    FolderDiff diff = getFolderDiff();
-	    List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false, true);
-	    assertTrue(result.isEmpty());
-	    ChangelogSet changelogSet = new ChangelogSet(null, result);
-	    assertTrue(changelogSet.isEmptySet());
-	}
-	
-	@Test
-	public void testModifiedFiles() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				boolean modified = file.setLastModified(modifiedTime);
-				if (!modified) {
-				    throw new IOException("setlastModified failed");
-				}
-				String relativeName = FolderDiff.getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
-				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.MODIFIED));
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));		
-	}
-	
-	@Test
-	public void testCopiedFiles() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				File newFile = createNewFile(file, true);
-				String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
-				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));		
-	}
+    File src, dst;
+    @Rule
+    public TemporaryFolder srcFolder = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder dstFolder = new TemporaryFolder();
+    String rootFilePath, subfolderFilePath, folderFilePath;
+    long currentTestExecutionTime;
+    long ONE_MINUTE = 1000 * 60;
 
-	@Test
-	public void testCreatedFiles() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				File newFile = createNewFile(file, false);
-				String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), src.getAbsolutePath());
-				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.NEW));
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getNewOrModifiedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));		
-	}
-	
-	@Test
-	public void testDeletedFiles() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(src, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				if ( file.delete() ) {
-					String relativeName = FolderDiff.getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
-					expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
-				}
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
-	}
-	
-	@Test
-	public void testNewFilesInDst() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				// the file is newly created in dst, we shouldn't delete this file
-				// therefore, we don't need to add to expected
-				File newFile = createNewFile(file, false);
-				String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
-				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
-	}
-	
-	@Test
-	public void testCopiedFilesInDst() throws IOException {
-		Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				// the file is copied in dst, the last modified time should be same as the original one
-				// we should delete this file
-				File newFile = createNewFile(file, true);
-				String relativeName = FolderDiff.getRelativeName(newFile.getAbsolutePath(), dst.getAbsolutePath());
-				expected.add(new FolderDiff.Entry(relativeName, FolderDiff.Entry.Type.DELETED));
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
-	}
-	
-	@Test
-	public void testCopiedFilesInDstWithAllowDeleteList() throws IOException {
-		Collection<File> list = FileUtils.listFiles(dst, null, true);
-		Set<String> allowDeleteList = new HashSet<String>();
-		for(File file : list) {
-			String relativePath = FolderDiff.getRelativeName(file.getAbsolutePath(), dst.getAbsolutePath());
-			allowDeleteList.add(relativePath);
-		}
-		
-		Set<FolderDiff.Entry> expected = processFiles(dst, new FileCallable() {
-			public void process(File file, Set<FolderDiff.Entry> expected) throws IOException {
-				// the file is copied in dst, the last modified time should be same as the original one
-				// we should delete this file
-				File newFile = createNewFile(file, true);
-			}
-		});
-		FolderDiff diff = getFolderDiff();
-		diff.setAllowDeleteList(allowDeleteList);
-		List<FolderDiff.Entry> result = diff.getDeletedFiles(checkTime, false, true);
-		assertEquals(expected, new HashSet<FolderDiff.Entry>(result));	
-	}
-		
-	
-	private File createNewFile(File srcFile, boolean copyFile) throws IOException {
-		String ext = FilenameUtils.getExtension(srcFile.getAbsolutePath());
-		if ( null != ext && ext.length() > 0 ) ext = "." + ext;
-		String base = FilenameUtils.removeExtension(srcFile.getAbsolutePath());
-		for(int i=0; ; i++) {
-			String newName = null;
-			if ( 0 == i ) newName = base + "New" + ext;
-			else newName = base + "New" + i + ext;
-			File newFile = new File(newName);
-			if ( !newFile.exists() ) {
-				if ( copyFile ) {
-					FileUtils.copyFile(srcFile, newFile);
-					// newFile.setLastModified(System.currentTimeMillis());
-				} else {
-					PrintWriter writer = new PrintWriter(newFile);
-					writer.println("This is a FolderDiff Test File");
-					writer.flush();
-					writer.close();
-				}
-				return newFile;
-			}
-		}
-	}
-	
-	private FolderDiff getFolderDiff() {
-		FolderDiff folderDiff = new FolderDiff();
-		folderDiff.setSrcPath(src.getAbsolutePath());
-		folderDiff.setDstPath(dst.getAbsolutePath());
-		return folderDiff;
-	}
-	
-	private Set<FolderDiff.Entry> processFiles(File folder, FileCallable call) throws IOException {
-		ArrayList<File> files = new ArrayList<File>(FileUtils.listFiles(folder, null, true));
-		Collections.shuffle(files);
-		Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
-		for(int i=0; i<Math.min(10, files.size()/2); i++) {
-			File file = (File)files.get(i);
-			call.process(file, expected);
-		}
-		return expected;
-	}	
-	
-	private interface FileCallable {
-		public void process(File file, Set<FolderDiff.Entry> result) throws IOException ;
-	}
+    @Before
+    public void setupSrcAndDst() throws IOException {
+        // setup src Folder
+        src = srcFolder.getRoot();
+        src.createNewFile();
+        subfolderFilePath = createFile(src, "Folder", "subFolder", "subFolderFile.txt");
+        folderFilePath = createFile(src, "Folder", "FolderFile.git");
+        rootFilePath = createFile(src, "RootFile.java");
+
+        // setup destination Folder
+        dst = dstFolder.getRoot();
+        dst.createNewFile();
+        createFile(dst, subfolderFilePath);
+        createFile(dst, folderFilePath);
+        createFile(dst, rootFilePath);
+
+        currentTestExecutionTime = System.currentTimeMillis();
+
+    }
+
+    private String createFile(File root, String... strings) throws IOException {
+        String path = TestUtils.createPlatformDependendPath(strings);
+        File file = new File(root, path);
+        FileUtils.touch(file);
+        Assert.assertTrue(file.exists());
+        return path;
+    }
+
+    @Test
+    public void getFiles2Delete_noRemovedSrcFiles_nothing2Delete() throws IOException, InterruptedException {
+        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src, dst);
+    }
+
+    @Test
+    public void getFiles2Delete_allDestinationFolderDeleted_nothing2Delete() throws IOException, InterruptedException {
+        FileUtils.deleteDirectory(dst);
+        assertMarkAsDelete(new HashSet<FolderDiff.Entry>(), src, dst);
+    }
+
+    @Test
+    public void getFiles2Delete_aSourceFolderDeleted_markAllFilesForDeletion()
+            throws IOException, InterruptedException {
+        FileUtils.deleteDirectory(src);
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.DELETED));
+        expected.add(new Entry(rootFilePath, FolderDiff.Entry.Type.DELETED));
+        expected.add(new Entry(subfolderFilePath, FolderDiff.Entry.Type.DELETED));
+        assertMarkAsDelete(expected, src, dst);
+    }
+
+    @Test
+    public void getFilesNewOrModifiedFiles_noNewOrModifiedFilesLastBuildTimeNow_nothing2Add() throws IOException {
+        assertMarkAsNewOrModified(new HashSet<FolderDiff.Entry>(), currentTestExecutionTime, src, dst);
+    }
+
+    @Test
+    public void getFilesNewOrModifiedFiles_DestinationFolderDeleted_AllNewFiles() throws IOException {
+        FileUtils.deleteDirectory(dst);
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.NEW));
+        expected.add(new Entry(rootFilePath, FolderDiff.Entry.Type.NEW));
+        expected.add(new Entry(subfolderFilePath, FolderDiff.Entry.Type.NEW));
+        assertMarkAsNewOrModified(expected, 0l, src, dst);
+    }
+
+    @Test(expected = IOException.class)
+    public void getFilesNewOrModifiedFiles_SourceFolderDeleted_ExceptionThrown() throws IOException {
+        FileUtils.deleteDirectory(src);
+        assertMarkAsNewOrModified(new HashSet<FolderDiff.Entry>(), 0l, src, dst);
+    }
+
+    @Test
+    public void getFilesNewOrModifiedFiles_SourceFileModificationDateNewerThenLastBuildTime_AddAllModifiedFiles()
+            throws IOException {
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        expected.add(new Entry(rootFilePath, FolderDiff.Entry.Type.MODIFIED));
+        expected.add(new Entry(subfolderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        assertMarkAsNewOrModified(expected, currentTestExecutionTime - ONE_MINUTE, src, dst);
+    }
+
+    @Test
+    public void getFilesNewOrModifiedFiles_OneSourceFileNewerThanDestinationFile_SourceFileModified()
+            throws IOException {
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        // implementation works only when times between file modification dates are at
+        // least different by 1000 mys == 1 second
+        // setModification Time in the future -> therfore the destination file needs to
+        // be updated
+        Assert.assertTrue((new File(src, folderFilePath)).setLastModified(currentTestExecutionTime + ONE_MINUTE));
+        assertMarkAsNewOrModified(expected, currentTestExecutionTime, src, dst);
+    }
+
+    @Test
+    public void getFilesNewOrModified_NewHiddenFileAndActOnHiddenFiles_HiddenFileIdentifiedAsNew() throws IOException {
+        // setup
+        String hiddenFilePath = createFile(src, "Folder", "subFolder", "._HiddenFile");
+        hideFile(hiddenFilePath);
+
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(hiddenFilePath, FolderDiff.Entry.Type.NEW));
+        // execute
+        FolderDiffFake diff = getFolderDiff(src, dst);
+        List<FolderDiff.Entry> actualResult = diff.getNewOrModifiedFiles(currentTestExecutionTime + ONE_MINUTE, false);
+        // check
+        assertMarkAsNewOrModified(expected, actualResult, diff);
+    }
+
+    @Test
+    public void getFilesNewOrModified_NewHiddenFileButIgnoreHidden_NoNewFile() throws IOException {
+        // setup
+        String hiddenFilePathString = createFile(src, "Folder", "subFolder", "._HiddenFile");
+        hideFile(hiddenFilePathString);
+        // execute
+        FolderDiffFake diff = getFolderDiff(src, dst);
+        diff.setIgnoreHidden(true);
+        List<FolderDiff.Entry> actualResult = diff.getNewOrModifiedFiles(currentTestExecutionTime + ONE_MINUTE, false);
+        // check
+        assertMarkAsNewOrModified(new HashSet<FolderDiff.Entry>(), actualResult, diff);
+    }
+
+    private void hideFile(String hiddenFilePathString) throws IOException {
+        File hiddenFile = new File(src, hiddenFilePathString);
+        // Windows specific code
+        if (SystemUtils.IS_OS_WINDOWS) {
+            Path hiddenFilePath = Paths.get(hiddenFile.getAbsolutePath());
+            Files.setAttribute(hiddenFilePath, "dos:hidden", true);
+        }
+        Assert.assertTrue(hiddenFile.isHidden());
+    }
+
+    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, List<FolderDiff.Entry> actual,
+            FolderDiffFake diff) {
+        assertEquals(expected, new HashSet<FolderDiff.Entry>(actual));
+        Assert.assertEquals(expected.size(), diff.copyFilePairs.size());
+    }
+
+    private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, long lastBuildTime, File src, File dst)
+            throws IOException {
+        FolderDiffFake diff = getFolderDiff(src, dst);
+        List<FolderDiff.Entry> actuaResult = diff.getNewOrModifiedFiles(lastBuildTime, false);
+        assertMarkAsNewOrModified(expected, actuaResult, diff);
+    }
+
+    private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst)
+            throws InterruptedException, IOException {
+        FolderDiffFake diff = getFolderDiff(src, dst);
+        List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
+        assertEquals(expected, new HashSet<FolderDiff.Entry>(result));
+        Assert.assertEquals(expected.size(), diff.deleteFiles.size());
+    }
+
+    private FolderDiffFake getFolderDiff(File src, File dst) {
+        return new FolderDiffFake(src.getAbsolutePath(), dst.getAbsolutePath());
+    }
+
 }
