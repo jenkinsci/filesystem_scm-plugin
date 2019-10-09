@@ -56,7 +56,7 @@ public class FSSCM extends SCM {
      * 
      */
 
-    private transient boolean copyHidden;
+    private boolean copyHidden;
     /**
      * If we have include/exclude filter, then this is true.
      *
