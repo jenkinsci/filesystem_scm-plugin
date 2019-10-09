@@ -152,14 +152,14 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
             Iterator<File> it = (Iterator<File>) FileUtils.iterateFiles(src, createAntPatternFileFilter(),
                     getDirFilter());
             while (it.hasNext()) {
-                File file = it.next();
-                String relativeName = getRelativeName(file.getAbsolutePath(), src.getAbsolutePath());
+                File sourceFile = it.next();
+                String relativeName = getRelativeName(sourceFile.getAbsolutePath(), src.getAbsolutePath());
                 // need to change dst to see if there is such a file
-                File tmp = new File(dst, relativeName);
+                File destinationFile = new File(dst, relativeName);
                 boolean newOrModified = true;
-                if (!tmp.exists()) {// new
+                if (isNew(destinationFile)) {// new
                     list.add(createAndLogg(relativeName, Entry.Type.NEW));
-                } else if (FileUtils.isFileNewer(file, time) || FileUtils.isFileNewer(file, tmp)) { // modified
+                } else if (isModified(time, sourceFile, destinationFile)) { // modified
                     list.add(createAndLogg(relativeName, Entry.Type.MODIFIED));
                 } else {
                     newOrModified = false;
@@ -168,13 +168,30 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
                     if (breakOnceFound) {
                         return list;
                     }
-                    copyFile(file, tmp);
+                    copyFile(sourceFile, destinationFile);
                 }
             }
         } else {
             throw new IOException(String.format("Source Directory not found! (%s)", src.getAbsolutePath()));
         }
         return list;
+    }
+
+    private boolean isNew(File tmp) {
+        return !tmp.exists();
+    }
+
+    private boolean isModified(long time, File sourceFile, File destinationFile) {
+        boolean sourcIsNewerThenLastModificationDate = FileUtils.isFileNewer(sourceFile, time);
+        boolean sourceIsNewerThenDestination = FileUtils.isFileNewer(sourceFile, destinationFile);
+        // jenkins #49561
+        boolean readableAttributeDiffers = sourceFile.canRead() != destinationFile.canRead();
+        boolean writableAttributeDiffers = sourceFile.canWrite() != destinationFile.canWrite();
+        boolean executableAttributeDiffers = sourceFile.canExecute() != destinationFile.canExecute();
+        boolean isHiddenAttributeDiffers = sourceFile.isHidden() != destinationFile.isHidden();
+        boolean attributeChanged = readableAttributeDiffers || writableAttributeDiffers || executableAttributeDiffers
+                || isHiddenAttributeDiffers;
+        return sourcIsNewerThenLastModificationDate || sourceIsNewerThenDestination || attributeChanged;
     }
 
     private Entry createAndLogg(String relativeName, Type type) {
