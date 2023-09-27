@@ -88,18 +88,8 @@ public class ChangelogSet extends hudson.scm.ChangeLogSet<Changelog> {
     }
 
     public static class XMLSerializer extends hudson.scm.ChangeLogParser {
-        private transient XStream2 xstream;
-
-        private Object readResolve() { // xstream field used to be serialized in build.xml
-            initXStream();
-            return this;
-        }
-
-        public XMLSerializer() {
-            initXStream();
-        }
-
-        private void initXStream() {
+        private static final XStream2 xstream;
+        static {
             xstream = new XStream2();
             xstream.alias("log", ChangelogSet.class);
             // xstream.addImplicitCollection(ChangelogSet.class, "changeLogSet");
