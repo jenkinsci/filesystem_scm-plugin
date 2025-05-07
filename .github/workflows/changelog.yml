@@ -1,6 +1,6 @@
 # Automates creation of Release Drafts using Release Drafter
 # More Info: https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc
-name: Changelog
+name: Changelog Drafter
 
 on:
   push:
@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: oleg-nenashev/jenkins-release-drafter@v5.2.0-jenkins-4
+      - name: Generate GitHub Release Draft
+        id: release-drafter
+        uses: release-drafter/release-drafter@v6.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
