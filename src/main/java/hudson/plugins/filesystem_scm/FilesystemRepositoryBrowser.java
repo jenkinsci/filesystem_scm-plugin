@@ -39,7 +39,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  */
 @Restricted(NoExternalUse.class)
 public class FilesystemRepositoryBrowser extends RepositoryBrowser<ChangeLogSet.Entry> {
-    
+
+    private static final long serialVersionUID = 8347582394758239475L;
+
     @Override
     public URL getChangeSetLink(ChangeLogSet.Entry changeSet) throws IOException {
         return null;

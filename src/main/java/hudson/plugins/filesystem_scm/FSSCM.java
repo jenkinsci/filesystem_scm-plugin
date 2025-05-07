@@ -43,17 +43,17 @@ public class FSSCM extends SCM {
 
     /**
      * The source folder
-     * 
+     *
      */
     private String path;
     /**
      * If true, will delete everything in workspace every time before we checkout
-     * 
+     *
      */
     private boolean clearWorkspace;
     /**
      * If true, will copy hidden files and folders. Default is false.
-     * 
+     *
      */
 
     private transient boolean copyHidden;
@@ -97,7 +97,7 @@ public class FSSCM extends SCM {
 
     @Deprecated
     public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter,
-            String[] filters) {
+                 String[] filters) {
         this(path, clearWorkspace, copyHidden, createFilterSettings(filterEnabled, includeFilter, filters));
     }
 
@@ -131,7 +131,7 @@ public class FSSCM extends SCM {
     @CheckForNull
     public String[] getFilters() {
         if (filterSettings == null) {
-            return null;
+            return new String[0];
         }
         final List<String> wildcards = filterSettings.getWildcards();
         return wildcards.toArray(new String[wildcards.size()]);
@@ -181,7 +181,7 @@ public class FSSCM extends SCM {
 
     @Override
     public void checkout(Run<?, ?> build, Launcher launcher, FilePath workspace, TaskListener listener,
-            File changelogFile, SCMRevisionState baseline) throws IOException, InterruptedException {
+                         File changelogFile, SCMRevisionState baseline) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
         PrintStream log = launcher.getListener().getLogger();
         log.println("FSSCM.checkout " + path + " to " + workspace);
@@ -383,7 +383,7 @@ public class FSSCM extends SCM {
 
     @Override
     public SCMRevisionState calcRevisionsFromBuild(Run<?, ?> build, FilePath workspace, Launcher launcher,
-            TaskListener listener) throws IOException, InterruptedException {
+                                                   TaskListener listener) throws IOException, InterruptedException {
         // we cannot really calculate a sensible revision state for a filesystem folder
         // therefore we return NONE and simply ignore the baseline in
         // compareRemoteRevisionWith
@@ -392,7 +392,10 @@ public class FSSCM extends SCM {
 
     @Override
     public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath workspace,
-            TaskListener listener, SCMRevisionState baseline) throws IOException, InterruptedException {
+                                                   TaskListener listener, SCMRevisionState baseline) throws IOException, InterruptedException {
+        if (launcher == null) {
+            throw new IllegalArgumentException("Launcher cannot be null");
+        }
         if (poll(project, launcher, workspace, listener)) {
             return PollingResult.SIGNIFICANT;
         } else {
