@@ -19,7 +19,8 @@
     <revision>2.2</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/filesystem_scm-plugin</gitHubRepo>
-    <jenkins.version>2.479.3</jenkins.version>
+    <jenkins.baseline>2.479</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.threshold>Low</spotbugs.threshold>
   </properties>
@@ -122,7 +123,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.479.x</artifactId>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
         <version>4710.v016f0a_07e34d</version>
         <scope>import</scope>
         <type>pom</type>
