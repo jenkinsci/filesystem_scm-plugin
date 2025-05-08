@@ -12,6 +12,7 @@ import hudson.tools.JDKInstaller.Platform;
 
 public class RemoteFolderDiff<T> extends FolderDiff<T> {
 
+    private static final long serialVersionUID = 5823948572938475938L;
     protected StringBuffer buf;
     protected long lastBuildTime;
     protected long lastSuccessfulBuildTime;

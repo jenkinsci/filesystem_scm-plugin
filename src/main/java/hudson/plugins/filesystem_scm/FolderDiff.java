@@ -28,11 +28,11 @@ import jenkins.MasterToSlaveFileCallable;
 
 /**
  * Detect if two folders are the same or not
- * 
+ *
  * <p>
  * This is the core logic for detecting if we need to checkout or pollchanges
  * </p>
- * 
+ *
  * <p>
  * Two methods to detect if the two folders are the same
  * </p>
@@ -40,7 +40,7 @@ import jenkins.MasterToSlaveFileCallable;
  * <li>check if there are new/modified files in the source folder</li>
  * <li>check if there are deleted files in the source folder</li>
  * </ul>
- * 
+ *
  * @param <T>
  *            Type of the item being returned by the callable
  * @author Sam NG
@@ -74,14 +74,12 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         this.ignoreHidden = ignoreHidden;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
     public void setIncludeFilter(String[] filters) {
         filterEnabled = true;
         includeFilter = true;
         this.filters = filters;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Handled on the Changelog class level")
     public void setExcludeFilter(String[] filters) {
         filterEnabled = true;
         includeFilter = false;
@@ -93,7 +91,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     }
 
     /**
-     * 
+     *
      * @param time
      *            should be the last build time, to improve performance, we will
      *            list all files modified after "time" and check with destination
@@ -124,21 +122,21 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * <li>if file is not in destination, this is a new file</li>
      * <li>if the destination file exists but is old, this is a modified file</li>
      * </ul>
-     * 
+     *
      * <p>
      * Note: the time parameter (1st param) is basically not used in the code. On
      * Windows, the lastModifiedDate will not be updated when you copy a file to the
      * source folder, until we have a way to get the "real" lastModifiedDate on
      * Windows, we won't use this "time" field
      * </p>
-     * 
+     *
      * @param time
      *            should be the last build time, to improve performance, we will
      *            list all files modified after "time" and check with destination
      * @param breakOnceFound
      *            to improve performance, we will return once we found the 1st new
      *            or modified file
-     * 
+     *
      * @return the list of new or modified files
      * @throws IOException
      *             when source directory is not found or copying is not successful
@@ -204,7 +202,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     }
 
     /**
-     * 
+     *
      * @param time
      *            not used
      * @param breakOnceFound
@@ -235,11 +233,11 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * <li>if file is not in source, and it is in the allowDeleteList, this file
      * will be deleted in the destination</li>
      * </ul>
-     * 
+     *
      * @param breakOnceFound
      *            to improve performance, we will return once we found the 1st new
      *            or modified file
-     * 
+     *
      * @return the list of deleted files
      * @throws IOException
      *             if IO error occurs when deleting a file
@@ -289,7 +287,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * should delete the given file
-     * 
+     *
      * @param file
      *            the file to delete
      * @return true if successful
@@ -303,7 +301,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * This function will convert e.stackTrace to String and call log(String)
-     * 
+     *
      * @param e
      *            a thrown Exception which shall be logged
      */
@@ -313,7 +311,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * This function will convert e.stackTrace to String and call log(String)
-     * 
+     *
      * @param msg
      *            some message to be logged
      * @param e
@@ -325,7 +323,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * Default log to System.out
-     * 
+     *
      * @param msg
      *            some message to be logged
      */
@@ -335,10 +333,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * Convert Exception.stackTrace to String
-     * 
+     *
      * @param e
      *            an Exception which shall be converted to string
-     * 
+     *
      * @return the exceptions stacktrace as string
      */
     public static String stackTraceToString(Exception e) {
@@ -359,7 +357,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
      * </ul>
      * This function will not handle Unix/Windows path separator conversation, but
      * will append a java.io.File.separator if folderName does not end with one
-     * 
+     *
      * @param fileName
      *            the full path of the file, usually file.getAbsolutePath()
      * @param folderName
@@ -382,7 +380,7 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
 
     /**
      * Copy file from source to destination (default will not copy file permission)
-     * 
+     *
      * @param src
      *            Source File
      * @param dst
