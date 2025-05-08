@@ -11,13 +11,12 @@
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>Jenkins File System SCM Plugin</name>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>https://github.com/jenkinsci/filesystem_scm-plugin</url>
 
   <properties>
-    <revision>2.3</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/filesystem_scm-plugin</gitHubRepo>
     <jenkins.baseline>2.479</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
