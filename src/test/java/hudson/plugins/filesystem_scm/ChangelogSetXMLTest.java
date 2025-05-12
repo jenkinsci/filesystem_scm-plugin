@@ -2,16 +2,18 @@ package hudson.plugins.filesystem_scm;
 
 import hudson.model.Run;
 import java.util.*;
-import org.junit.*;
-import java.io.*;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class ChangelogSetXMLTest {
+import java.io.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ChangelogSetXMLTest {
 
 	ChangelogSet changeLogSet;
-	
-	@Before
-	public void setupChangeLogSet() {
+
+    @BeforeEach
+    void setupChangeLogSet() {
 		List<FolderDiff.Entry> changes = new ArrayList<FolderDiff.Entry>();
 		changes.add(new FolderDiff.Entry("c:\\tmp\\del.java", FolderDiff.Entry.Type.DELETED));
 		changes.add(new FolderDiff.Entry("c:\\tmp\\add.java", FolderDiff.Entry.Type.NEW));
@@ -19,9 +21,9 @@ public class ChangelogSetXMLTest {
 		changes.add(new FolderDiff.Entry("c:\\tmp\\cc.java", FolderDiff.Entry.Type.MODIFIED));
 		changeLogSet = new ChangelogSet(null, changes);
 	}
-	
-	@Test
-	public void testToAndFromXML() throws IOException {
+
+    @Test
+    void testToAndFromXML() throws IOException {
 		ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer(); 
 		File tmp = File.createTempFile("xstream", null);
 		
