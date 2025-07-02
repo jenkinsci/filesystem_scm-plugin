@@ -4,7 +4,7 @@ import java.io.File;
 
 public class TestUtils {
 
-    public static String createPlatformDependendPath(String... parts) {
+    public static String createPlatformDependentPath(String... parts) {
         String path = "";
         for (int i = 0; i < parts.length - 1; i++) {
             path = path.concat(parts[i]).concat(File.separator);
