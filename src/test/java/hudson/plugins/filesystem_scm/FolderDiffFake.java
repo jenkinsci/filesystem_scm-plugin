@@ -1,15 +1,16 @@
 package hudson.plugins.filesystem_scm;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 public class FolderDiffFake<T> extends FolderDiff<T> {
 
-    final List<ImmutablePair<File, File>> copyFilePairs;
-    final List<File> deleteFiles;
+    List<ImmutablePair<File, File>> copyFilePairs;
+    List<File> deleteFiles;
 
     public FolderDiffFake(String sourcePath, String destinationPath) {
         copyFilePairs = new ArrayList<>();
@@ -23,7 +24,7 @@ public class FolderDiffFake<T> extends FolderDiff<T> {
      * copied
      */
     @Override
-    protected void copyFile(File src, File dst) {
+    protected void copyFile(File src, File dst) throws IOException {
         copyFilePairs.add(new ImmutablePair<>(src, dst));
     }
 

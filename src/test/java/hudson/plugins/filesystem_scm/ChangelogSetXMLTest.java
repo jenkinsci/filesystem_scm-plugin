@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +26,7 @@ class ChangelogSetXMLTest {
     }
 
     @Test
-    void testToAndFromXML() throws Exception {
+    void testToAndFromXML() throws IOException {
         ChangelogSet.XMLSerializer handler = new ChangelogSet.XMLSerializer();
         File tmp = File.createTempFile("xstream", null);
 

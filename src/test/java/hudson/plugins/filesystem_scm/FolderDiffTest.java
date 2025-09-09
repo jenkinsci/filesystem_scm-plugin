@@ -35,7 +35,7 @@ class FolderDiffTest {
     private static final long ONE_MINUTE = 1000 * 60;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() throws IOException {
         // setup src Folder
         src = srcFolder;
         src.createNewFile();
@@ -53,7 +53,7 @@ class FolderDiffTest {
         currentTestExecutionTime = System.currentTimeMillis();
     }
 
-    private String createFile(File root, String... strings) throws Exception {
+    private String createFile(File root, String... strings) throws IOException {
         String path = TestUtils.createPlatformDependentPath(strings);
         File file = new File(root, path);
         FileUtils.touch(file);
@@ -62,19 +62,19 @@ class FolderDiffTest {
     }
 
     @Test
-    void getFiles2Delete_noRemovedSrcFiles_nothing2Delete() throws Exception {
+    void getFiles2Delete_noRemovedSrcFiles_nothing2Delete() throws IOException, InterruptedException {
         assertMarkAsDelete(new HashSet<>(), src, dst);
     }
 
     @Test
-    void getFiles2Delete_allDestinationFolderDeleted_nothing2Delete() throws Exception {
+    void getFiles2Delete_allDestinationFolderDeleted_nothing2Delete() throws IOException, InterruptedException {
         FileUtils.deleteDirectory(dst);
         assertMarkAsDelete(new HashSet<>(), src, dst);
     }
 
     @Test
     void getFiles2Delete_aSourceFolderDeleted_markAllFilesForDeletion()
-            throws Exception {
+            throws IOException, InterruptedException {
         FileUtils.deleteDirectory(src);
         Set<FolderDiff.Entry> expected = new HashSet<>();
         expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.DELETED));
@@ -84,12 +84,12 @@ class FolderDiffTest {
     }
 
     @Test
-    void getFilesNewOrModifiedFiles_noNewOrModifiedFilesLastBuildTimeNow_nothing2Add() throws Exception {
+    void getFilesNewOrModifiedFiles_noNewOrModifiedFilesLastBuildTimeNow_nothing2Add() throws IOException {
         assertMarkAsNewOrModified(new HashSet<>(), currentTestExecutionTime, src, dst);
     }
 
     @Test
-    void getFilesNewOrModifiedFiles_DestinationFolderDeleted_AllNewFiles() throws Exception {
+    void getFilesNewOrModifiedFiles_DestinationFolderDeleted_AllNewFiles() throws IOException {
         FileUtils.deleteDirectory(dst);
         Set<FolderDiff.Entry> expected = new HashSet<>();
         expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.NEW));
@@ -99,7 +99,7 @@ class FolderDiffTest {
     }
 
     @Test
-    void getFilesNewOrModifiedFiles_SourceFolderDeleted_ExceptionThrown() throws Exception {
+    void getFilesNewOrModifiedFiles_SourceFolderDeleted_ExceptionThrown() throws IOException {
         FileUtils.deleteDirectory(src);
         assertThrows(IOException.class, () ->
                 assertMarkAsNewOrModified(new HashSet<>(), 0L, src, dst));
@@ -107,7 +107,7 @@ class FolderDiffTest {
 
     @Test
     void getFilesNewOrModifiedFiles_SourceFileModificationDateNewerThenLastBuildTime_AddAllModifiedFiles()
-            throws Exception {
+            throws IOException {
         Set<FolderDiff.Entry> expected = new HashSet<>();
         expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
         expected.add(new Entry(rootFilePath, FolderDiff.Entry.Type.MODIFIED));
@@ -117,7 +117,7 @@ class FolderDiffTest {
 
     @Test
     void getFilesNewOrModifiedFiles_OneSourceFileNewerThanDestinationFile_SourceFileModified()
-            throws Exception {
+            throws IOException {
         Set<FolderDiff.Entry> expected = new HashSet<>();
         expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
         // implementation works only when times between file modification dates are at
@@ -129,7 +129,7 @@ class FolderDiffTest {
     }
 
     @Test
-    void getFilesNewOrModified_NewHiddenFileAndActOnHiddenFiles_HiddenFileIdentifiedAsNew() throws Exception {
+    void getFilesNewOrModified_NewHiddenFileAndActOnHiddenFiles_HiddenFileIdentifiedAsNew() throws IOException {
         // setup
         String hiddenFilePath = createFile(src, "Folder", "subFolder", "._HiddenFile");
         hideFile(hiddenFilePath);
@@ -144,7 +144,7 @@ class FolderDiffTest {
     }
 
     @Test
-    void getFilesNewOrModified_NewHiddenFileButIgnoreHidden_NoNewFile() throws Exception {
+    void getFilesNewOrModified_NewHiddenFileButIgnoreHidden_NoNewFile() throws IOException {
         // setup
         String hiddenFilePathString = createFile(src, "Folder", "subFolder", "._HiddenFile");
         hideFile(hiddenFilePathString);
@@ -156,7 +156,7 @@ class FolderDiffTest {
         assertMarkAsNewOrModified(new HashSet<>(), actualResult, diff);
     }
 
-    private void hideFile(String hiddenFilePathString) throws Exception {
+    private void hideFile(String hiddenFilePathString) throws IOException {
         File hiddenFile = new File(src, hiddenFilePathString);
         // Windows specific code
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -167,20 +167,20 @@ class FolderDiffTest {
     }
 
     private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, List<FolderDiff.Entry> actual,
-                                           FolderDiffFake<File> diff) {
+            FolderDiffFake<File> diff) {
         assertEquals(expected, new HashSet<>(actual));
         assertEquals(expected.size(), diff.copyFilePairs.size());
     }
 
     private void assertMarkAsNewOrModified(Set<FolderDiff.Entry> expected, long lastBuildTime, File src, File dst)
-            throws Exception {
+            throws IOException {
         FolderDiffFake<File> diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> actualResult = diff.getNewOrModifiedFiles(lastBuildTime, false);
         assertMarkAsNewOrModified(expected, actualResult, diff);
     }
 
     private void assertMarkAsDelete(Set<FolderDiff.Entry> expected, File src, File dst)
-            throws Exception {
+            throws InterruptedException, IOException {
         FolderDiffFake<File> diff = getFolderDiff(src, dst);
         List<FolderDiff.Entry> result = diff.getFiles2Delete(false);
         assertEquals(expected, new HashSet<>(result));

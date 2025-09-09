@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +18,7 @@ class SimpleAntWildcardFilterTest {
     private File tmpDir;
 
     @Test
-    void test1() throws Exception {
+    void test1() throws IOException {
         File myDir = new File(tmpDir, "abc001234/def/xyz.000");
         myDir.mkdirs();
         File f1 = new File(myDir, "aa.txt");

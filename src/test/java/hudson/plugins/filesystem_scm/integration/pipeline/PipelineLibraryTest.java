@@ -51,7 +51,7 @@ class PipelineLibraryTest {
         j.buildAndAssertSuccess(job);
     }
 
-    private static File newFolder(File root, String... subDirs) throws Exception {
+    private static File newFolder(File root, String... subDirs) throws IOException {
         String subFolder = String.join("/", subDirs);
         File result = new File(root, subFolder);
         if (!result.mkdirs()) {

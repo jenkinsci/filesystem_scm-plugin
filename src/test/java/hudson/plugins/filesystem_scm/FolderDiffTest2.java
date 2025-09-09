@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class FolderDiffTest2 {
 
     @Test
-    void GetRelative_correctFileAndFolder_Subpath() throws Exception {
+    void GetRelative_correctFileAndFolder_Subpath() throws IOException {
         String folder = TestUtils.createPlatformDependentPath("c:", "tmp");
         String expected = TestUtils.createPlatformDependentPath("abc", "qq", "qq.java");
         String actual = FolderDiff.getRelativeName(TestUtils.createPlatformDependentPath(folder, expected), folder);
@@ -18,7 +18,7 @@ class FolderDiffTest2 {
     }
 
     @Test
-    void GetRelative_correctFileAndDrive_Subpath() throws Exception {
+    void GetRelative_correctFileAndDrive_Subpath() throws IOException {
         String folder = TestUtils.createPlatformDependentPath("c:");
         String expected = TestUtils.createPlatformDependentPath("tmp", "abc", "qq", "qq.java");
         String actual = FolderDiff.getRelativeName(TestUtils.createPlatformDependentPath(folder, expected), folder);

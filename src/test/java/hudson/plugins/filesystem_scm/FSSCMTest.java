@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +21,12 @@ class FSSCMTest {
     private final List<Entry> list = new ArrayList<>();
 
     @Test
-    void processChangelog_nullChangelogFile_NoException() throws Exception {
+    void processChangelog_nullChangelogFile_NoException() throws FileNotFoundException {
         fsscm.processChangelog(null, null, list);
     }
 
     @Test
-    void processChangelog_ChangelogFile_createdChangelogFile() throws Exception {
+    void processChangelog_ChangelogFile_createdChangelogFile() throws FileNotFoundException {
         File changeLogFile = new File(testFolder, "changelog.xml");
         assertFalse(changeLogFile.exists());
         fsscm.processChangelog(null, changeLogFile, list);
