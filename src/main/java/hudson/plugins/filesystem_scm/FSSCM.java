@@ -128,6 +128,7 @@ public class FSSCM extends SCM {
      * @return an array of wildcards, or null
      * @deprecated Use {@link #getFilterSettings()}.
      */
+    @Deprecated
     @CheckForNull
     public String[] getFilters() {
         if (filterSettings == null) {

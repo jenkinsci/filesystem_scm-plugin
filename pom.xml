@@ -4,20 +4,19 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>5.13</version>
+    <version>5.24</version>
   </parent>
 
   <groupId>hudson.plugins.filesystem_scm</groupId>
   <artifactId>filesystem_scm</artifactId>
   <packaging>hpi</packaging>
   <name>Jenkins File System SCM Plugin</name>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <description>Using File System as SCM, done by checking file system last modified date.</description>
   <url>https://github.com/jenkinsci/filesystem_scm-plugin</url>
 
   <properties>
-    <revision>2.2</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/filesystem_scm-plugin</gitHubRepo>
     <jenkins.baseline>2.479</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
@@ -114,7 +113,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.12.0</version>
+      <version>3.18.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -124,7 +123,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-${jenkins.baseline}.x</artifactId>
-        <version>4710.v016f0a_07e34d</version>
+        <version>5054.v620b_5d2b_d5e6</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
