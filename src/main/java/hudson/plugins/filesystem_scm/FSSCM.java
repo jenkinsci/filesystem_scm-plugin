@@ -53,7 +53,7 @@ public class FSSCM extends SCM {
     private boolean clearWorkspace;
 
     /**
-     * If true, will log all the file names along with their entry types. Default is true (for backwards compatibility).
+     * If true, it will log all the file names along with their entry types. Default is true (for backwards compatibility).
      *
      */
     private boolean verboseLogging = true;
