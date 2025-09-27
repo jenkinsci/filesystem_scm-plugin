@@ -17,7 +17,7 @@ public class FSSCMTest {
 	@Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 	
-	FSSCM fsscm = new FSSCM("", false, false, null);
+	FSSCM fsscm = new FSSCM("", false, false, true, null);
 	List<Entry> list = new ArrayList<>();
 	
 	@Test

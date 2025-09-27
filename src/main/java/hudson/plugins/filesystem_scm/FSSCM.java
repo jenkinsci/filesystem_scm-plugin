@@ -51,11 +51,17 @@ public class FSSCM extends SCM {
      *
      */
     private boolean clearWorkspace;
+
+    /**
+     * If true, will log all the file names along with their entry types. Default is true (for backwards compatibility).
+     *
+     */
+    private boolean verboseLogging = true;
+
     /**
      * If true, will copy hidden files and folders. Default is false.
      *
      */
-
     private transient boolean copyHidden;
     /**
      * If we have include/exclude filter, then this is true.
@@ -88,17 +94,18 @@ public class FSSCM extends SCM {
     private FilterSettings filterSettings;
 
     @DataBoundConstructor
-    public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, FilterSettings filterSettings) {
+    public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean verboseLogging, FilterSettings filterSettings) {
         this.path = path;
         this.clearWorkspace = clearWorkspace;
         this.copyHidden = copyHidden;
+        this.verboseLogging = verboseLogging;
         this.filterSettings = filterSettings;
     }
 
     @Deprecated
     public FSSCM(String path, boolean clearWorkspace, boolean copyHidden, boolean filterEnabled, boolean includeFilter,
                  String[] filters) {
-        this(path, clearWorkspace, copyHidden, createFilterSettings(filterEnabled, includeFilter, filters));
+        this(path, clearWorkspace, copyHidden, true, createFilterSettings(filterEnabled, includeFilter, filters));
     }
 
     private static FilterSettings createFilterSettings(boolean filterEnabled, boolean includeFilter, String[] filters) {
@@ -122,6 +129,14 @@ public class FSSCM extends SCM {
 
     public String getPath() {
         return path;
+    }
+
+    public boolean isVerboseLogging() {
+        return verboseLogging;
+    }
+
+    public void setVerboseLogging(boolean verboseLogging) {
+        this.verboseLogging = verboseLogging;
     }
 
     /**
@@ -206,7 +221,7 @@ public class FSSCM extends SCM {
                 // if we enable clearWorkspace on the 1st jobrun, seems the workspace will be
                 // deleted
                 // running a RemoteListDir() on a not existing folder will throw an exception
-                // anyway, if the folder doesn't exist, we dont' need to list the files
+                // anyway, if the folder doesn't exist, we don't need to list the files
                 Set<String> existingFiles = workspace.act(new RemoteListDir());
                 allowDeleteList.setList(existingFiles);
             }
@@ -232,6 +247,8 @@ public class FSSCM extends SCM {
         if (str.length() > 0)
             log.println(str);
 
+        logSummary(log, list);
+
         processChangelog(build, changelogFile, list);
 
         log.println("FSSCM.check completed in " + formatDuration(System.currentTimeMillis() - start));
@@ -244,6 +261,27 @@ public class FSSCM extends SCM {
             ChangelogSet.XMLSerializer serializer = createXMLSerializer();
             ChangelogSet changeLogSet = new ChangelogSet(build, list);
             serializer.save(changeLogSet, changelogFile);
+        }
+    }
+
+    /**
+     * Logs the count of files checked out.
+     *
+     */
+    private void logSummary(PrintStream log, List<FolderDiff.Entry> entries) {
+        int newCount = 0, modifiedCount = 0, deletedCount = 0;
+
+        for (FolderDiff.Entry entry : entries) {
+            switch (entry.getType()) {
+                case NEW -> newCount++;
+                case MODIFIED -> modifiedCount++;
+                case DELETED -> deletedCount++;
+            }
+        }
+
+        if (!entries.isEmpty()) {
+            log.printf("Processed %d files (%d new, %d modified, %d deleted)%n",
+                    entries.size(), newCount, modifiedCount, deletedCount);
         }
     }
 
@@ -275,7 +313,7 @@ public class FSSCM extends SCM {
             allowDeleteList.load();
         } else {
             // watch list save file doesn't exist
-            // we will assuem all existing files are under watch
+            // we will assume all existing files are under watch
             // ie. everything can be deleted
             Set<String> existingFiles = workspace.act(new RemoteListDir());
             allowDeleteList.setList(existingFiles);
@@ -313,6 +351,8 @@ public class FSSCM extends SCM {
         diff.setSrcPath(path);
 
         diff.setIgnoreHidden(!copyHidden);
+
+        diff.setVerboseLogging(verboseLogging);
 
         if (filterSettings != null) {
             if (filterSettings.isIncludeFilter()) {
