@@ -13,23 +13,23 @@ public class FolderDiffFake<T> extends FolderDiff<T> {
     List<File> deleteFiles;
 
     public FolderDiffFake(String sourcePath, String destinationPath) {
-        copyFilePairs = new ArrayList<ImmutablePair<File, File>>();
-        deleteFiles = new ArrayList<File>();
+        copyFilePairs = new ArrayList<>();
+        deleteFiles = new ArrayList<>();
         this.setDstPath(destinationPath);
         this.setSrcPath(sourcePath);
     }
 
     /**
-     * Overriden for Testing purposes only log the files which should have been
+     * Overridden for Testing purposes only log the files which should have been
      * copied
      */
     @Override
     protected void copyFile(File src, File dst) throws IOException {
-        copyFilePairs.add(new ImmutablePair<File, File>(src, dst));
+        copyFilePairs.add(new ImmutablePair<>(src, dst));
     }
 
     /**
-     * Overriden for Testing purposes only log the files which should have been
+     * Overridden for Testing purposes only log the files which should have been
      * deleted
      */
     @Override

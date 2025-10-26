@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>5.24</version>
+    <version>5.26</version>
   </parent>
 
   <groupId>hudson.plugins.filesystem_scm</groupId>
@@ -22,6 +22,7 @@
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.threshold>Low</spotbugs.threshold>
+    <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
   </properties>
 
   <developers>
@@ -54,7 +55,7 @@
   <licenses>
     <license>
       <name>MIT License</name>
-      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <url>https://www.opensource.org/licenses/mit-license.php</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -113,7 +114,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.18.0</version>
+      <version>3.19.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -133,7 +134,7 @@
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:https://github.com/${gitHubRepo}.git</developerConnection>
-    <url>http://github.com/${gitHubRepo}</url>
+    <url>https://github.com/${gitHubRepo}</url>
     <tag>${scmTag}</tag>
   </scm>
 </project>
