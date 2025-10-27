@@ -32,4 +32,13 @@ class FSSCMTest {
         fsscm.processChangelog(null, changeLogFile, list);
         assertTrue(changeLogFile.exists());
     }
+
+    @Test
+    void verboseLogging_GetterSetter_WorkCorrectly() {
+        // Default value should be true
+        assertTrue(fsscm.isVerboseLogging());
+
+        fsscm.setVerboseLogging(false);
+        assertFalse(fsscm.isVerboseLogging()); // Should be false after setting.
+    }
 }

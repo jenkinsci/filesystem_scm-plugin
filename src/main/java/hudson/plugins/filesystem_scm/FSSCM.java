@@ -53,7 +53,7 @@ public class FSSCM extends SCM {
     private boolean clearWorkspace;
 
     /**
-     * If true, it will log all the file names along with their entry types. Default is true (for backwards compatibility).
+     * If true, it will log all the file names along with their entry types. Default is true (for backward compatibility).
      *
      */
     private boolean verboseLogging = true;
@@ -247,7 +247,7 @@ public class FSSCM extends SCM {
         if (str.length() > 0)
             log.println(str);
 
-        logSummary(log, list);
+        printLogSummary(log, callable.getNewCount(), callable.getModifiedCount(), callable.getDeletedCount());
 
         processChangelog(build, changelogFile, list);
 
@@ -268,20 +268,12 @@ public class FSSCM extends SCM {
      * Logs the count of files checked out.
      *
      */
-    private void logSummary(PrintStream log, List<FolderDiff.Entry> entries) {
-        int newCount = 0, modifiedCount = 0, deletedCount = 0;
+    private void printLogSummary(PrintStream log, int newCount, int modifiedCount, int deletedCount) {
+        int total = newCount + modifiedCount + deletedCount;
 
-        for (FolderDiff.Entry entry : entries) {
-            switch (entry.getType()) {
-                case NEW -> newCount++;
-                case MODIFIED -> modifiedCount++;
-                case DELETED -> deletedCount++;
-            }
-        }
-
-        if (!entries.isEmpty()) {
+        if (total > 0) {
             log.printf("Processed %d files (%d new, %d modified, %d deleted)%n",
-                    entries.size(), newCount, modifiedCount, deletedCount);
+                    total, newCount, modifiedCount, deletedCount);
         }
     }
 
