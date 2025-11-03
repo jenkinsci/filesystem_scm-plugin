@@ -156,6 +156,48 @@ class FolderDiffTest {
         assertMarkAsNewOrModified(new HashSet<>(), actualResult, diff);
     }
 
+    @Test
+    // Jenkins #49561 FeatureRequest
+    public void getFilesNewOrModifiedFiles_FileAttributesCanExecuteChanged_SourceFileModified() throws IOException {
+        // setup
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        File folderFile = new File(src, folderFilePath);
+
+        Assert.assertTrue(folderFile.exists());
+        folderFile.setExecutable(!folderFile.canExecute());
+
+        assertMarkAsNewOrModified(expected, currentTestExecutionTime, src, dst);
+    }
+
+    @Test
+    // Jenkins #49561 FeatureRequest
+    public void getFilesNewOrModifiedFiles_FileAttributesCanReadChanged_SourceFileModified() throws IOException {
+        // setup
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        File folderFile = new File(src, folderFilePath);
+
+        Assert.assertTrue(folderFile.exists());
+        folderFile.setReadable(!folderFile.canRead());
+
+        assertMarkAsNewOrModified(expected, currentTestExecutionTime, src, dst);
+    }
+
+    @Test
+    // Jenkins #49561 FeatureRequest
+    public void getFilesNewOrModifiedFiles_FileAttributesCanWriteChanged_SourceFileModified() throws IOException {
+        // setup
+        Set<FolderDiff.Entry> expected = new HashSet<FolderDiff.Entry>();
+        expected.add(new Entry(folderFilePath, FolderDiff.Entry.Type.MODIFIED));
+        File folderFile = new File(src, folderFilePath);
+
+        Assert.assertTrue(folderFile.exists());
+        folderFile.setWritable(!folderFile.canWrite());
+
+        assertMarkAsNewOrModified(expected, currentTestExecutionTime, src, dst);
+    }
+
     private void hideFile(String hiddenFilePathString) throws IOException {
         File hiddenFile = new File(src, hiddenFilePathString);
         // Windows specific code
@@ -190,5 +232,4 @@ class FolderDiffTest {
     private FolderDiffFake<File> getFolderDiff(File src, File dst) {
         return new FolderDiffFake<>(src.getAbsolutePath(), dst.getAbsolutePath());
     }
-
 }
