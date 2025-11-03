@@ -45,7 +45,7 @@ class PipelineLibraryTest {
 
         // Create job
         WorkflowJob job = new WorkflowJob(j.jenkins, "MyPipeline");
-        job.setDefinition(new CpsScmFlowDefinition(new FSSCM(null, false, false,
+        job.setDefinition(new CpsScmFlowDefinition(new FSSCM(null, false, false, true,
                 new FilterSettings(true, Collections.emptyList())), "Jenkinsfile"));
 
         j.buildAndAssertSuccess(job);

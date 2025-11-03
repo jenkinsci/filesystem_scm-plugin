@@ -156,6 +156,39 @@ class FolderDiffTest {
         assertMarkAsNewOrModified(new HashSet<>(), actualResult, diff);
     }
 
+    @Test
+    void createAndLogg_CountsEntriesCorrectly() {
+        FolderDiffFake<File> diff = getFolderDiff(src, dst);
+
+        // Test NEW files counting
+        FolderDiff.Entry newEntry = diff.createAndLogg("newFile.txt", FolderDiff.Entry.Type.NEW);
+        assertEquals(1, diff.getNewCount());
+        assertEquals(0, diff.getModifiedCount());
+        assertEquals(0, diff.getDeletedCount());
+        assertEquals("newFile.txt", newEntry.getFilename());
+        assertEquals(FolderDiff.Entry.Type.NEW, newEntry.getType());
+
+        // Test MODIFIED files counting
+        FolderDiff.Entry modifiedEntry = diff.createAndLogg("modifiedFile.txt", FolderDiff.Entry.Type.MODIFIED);
+        assertEquals(1, diff.getNewCount());
+        assertEquals(1, diff.getModifiedCount());
+        assertEquals(0, diff.getDeletedCount());
+
+        // Testing DELETED files counting
+        FolderDiff.Entry deletedEntry = diff.createAndLogg("deletedFile.txt", FolderDiff.Entry.Type.DELETED);
+        assertEquals(1, diff.getNewCount());
+        assertEquals(1, diff.getModifiedCount());
+        assertEquals(1, diff.getDeletedCount());
+
+        // Testing multiple operations
+        diff.createAndLogg("anotherNew.txt", FolderDiff.Entry.Type.NEW);
+        diff.createAndLogg("anotherModified.txt", FolderDiff.Entry.Type.MODIFIED);
+
+        assertEquals(2, diff.getNewCount());
+        assertEquals(2, diff.getModifiedCount());
+        assertEquals(1, diff.getDeletedCount());
+    }
+
     private void hideFile(String hiddenFilePathString) throws IOException {
         File hiddenFile = new File(src, hiddenFilePathString);
         // Windows specific code

@@ -21,7 +21,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.plugins.filesystem_scm.FolderDiff.Entry.Type;
 import hudson.remoting.VirtualChannel;
 import jenkins.MasterToSlaveFileCallable;
@@ -58,6 +57,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     private String[] filters;
     private Set<String> allowDeleteList;
 
+    private int newCount = 0;
+    private int modifiedCount = 0;
+    private int deletedCount = 0;
+
     public FolderDiff() {
         filterEnabled = false;
     }
@@ -89,6 +92,10 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
     public void setAllowDeleteList(Set<String> allowDeleteList) {
         this.allowDeleteList = allowDeleteList;
     }
+
+    public int getNewCount() { return newCount; }
+    public int getModifiedCount() { return modifiedCount; }
+    public int getDeletedCount() { return deletedCount; }
 
     /**
      *
@@ -175,7 +182,12 @@ public class FolderDiff<T> extends MasterToSlaveFileCallable<T> implements Seria
         return list;
     }
 
-    private Entry createAndLogg(String relativeName, Type type) {
+    protected Entry createAndLogg(String relativeName, Type type) {
+        switch (type) {
+            case NEW -> newCount++;
+            case MODIFIED -> modifiedCount++;
+            case DELETED -> deletedCount++;
+        }
         log(type.name() + " file: " + relativeName);
         return new Entry(relativeName, type);
     }
