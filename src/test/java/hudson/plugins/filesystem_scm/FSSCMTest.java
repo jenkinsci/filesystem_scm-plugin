@@ -17,7 +17,7 @@ class FSSCMTest {
     @TempDir
     private File testFolder;
 
-    private final FSSCM fsscm = new FSSCM("", false, false, null);
+    private final FSSCM fsscm = new FSSCM("", false, false, true, null);
     private final List<Entry> list = new ArrayList<>();
 
     @Test
@@ -31,5 +31,14 @@ class FSSCMTest {
         assertFalse(changeLogFile.exists());
         fsscm.processChangelog(null, changeLogFile, list);
         assertTrue(changeLogFile.exists());
+    }
+
+    @Test
+    void verboseLogging_GetterSetter_WorkCorrectly() {
+        // Default value should be true
+        assertTrue(fsscm.isVerboseLogging());
+
+        fsscm.setVerboseLogging(false);
+        assertFalse(fsscm.isVerboseLogging()); // Should be false after setting.
     }
 }

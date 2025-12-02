@@ -16,6 +16,7 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
     protected StringBuffer buf;
     protected long lastBuildTime;
     protected long lastSuccessfulBuildTime;
+    protected boolean verboseLogging = true;
 
     public RemoteFolderDiff() {
         buf = new StringBuffer();
@@ -33,13 +34,18 @@ public class RemoteFolderDiff<T> extends FolderDiff<T> {
         return lastSuccessfulBuildTime;
     }
 
+    public void setVerboseLogging(boolean verboseLogging) {
+        this.verboseLogging = verboseLogging;
+    }
+
     public void setLastSuccessfulBuildTime(long lastSuccessfulBuildTime) {
         this.lastSuccessfulBuildTime = lastSuccessfulBuildTime;
     }
 
     @Override
     protected void log(String msg) {
-        buf.append(msg).append("\n");
+        if (verboseLogging)
+            buf.append(msg).append("\n");
     }
 
     @Override
