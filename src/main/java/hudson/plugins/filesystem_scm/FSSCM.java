@@ -12,7 +12,7 @@ import java.util.Set;
 import javax.annotation.CheckForNull;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -369,7 +369,7 @@ public class FSSCM extends SCM {
             else
                 return ((double) diff / 1000.0) + " seconds";
         } else {
-            return org.apache.commons.lang.time.DurationFormatUtils.formatDurationWords(diff, true, true);
+            return org.apache.commons.lang3.time.DurationFormatUtils.formatDurationWords(diff, true, true);
         }
     }
 
